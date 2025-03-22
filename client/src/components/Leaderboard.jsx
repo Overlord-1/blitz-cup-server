@@ -50,7 +50,7 @@ const Leaderboard = () => {
   };
 
   return (
-    <div className="leaderboard-container">
+    <div className="flex flex-col gap-4 leaderboard-container">
       <h1>Codeforces Blitz Leaderboard</h1>
       <div className="search-container">
         <input

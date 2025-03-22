@@ -87,7 +87,7 @@ const TournamentBracket = () => {
   };
 
   return (
-    <div className="bg-red-600 tournament-container">
+    <div className="tournament-container">
       <h1>Tournament Bracket</h1>
       <div className="bracket-wrapper">
         <div className="bracket-container">
