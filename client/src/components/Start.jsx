@@ -1,152 +1,106 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+import { backendURL } from '../config/backendURL';
 
 const Start = () => {
-  const [currentRound, setCurrentRound] = useState("Round of 32");
-  const [selectedPlayer1, setSelectedPlayer1] = useState("");
-  const [selectedPlayer2, setSelectedPlayer2] = useState("");
-  
-  // Hardcoded round options
-  const rounds = [
-    "Round of 32",
-    "Round of 16",
-    "Quarter Finals",
-    "Semi Finals",
-    "Finals"
-  ];
-  
-  // Hardcoded player options
-  const players = [
-    { id: 1, name: "Player 1", handle: "coder123", seed: 1 },
-    { id: 2, name: "Player 2", handle: "algorithm_master", seed: 2 },
-    { id: 3, name: "Player 3", handle: "cpp_wizard", seed: 3 },
-    { id: 4, name: "Player 4", handle: "dynamic_coder", seed: 4 },
-    { id: 5, name: "Player 5", handle: "pythonista", seed: 5 },
-    { id: 6, name: "Player 6", handle: "graph_theory", seed: 6 },
-    { id: 7, name: "Player 7", handle: "binary_search", seed: 7 },
-    { id: 8, name: "Player 8", handle: "swift_dev", seed: 8 },
-    { id: 9, name: "Player 9", handle: "java_coder", seed: 9 },
-    { id: 10, name: "Player 10", handle: "sorting_algo", seed: 10 },
-    // Add more players as needed
-  ];
-  
-  const handleStartMatch = () => {
-    if (!selectedPlayer1 || !selectedPlayer2) {
-      alert("Please select both players before starting the match.");
-      return;
+  const [selectedRound, setSelectedRound] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [match, setMatch] = useState(null);
+
+  const rounds = Array.from({ length: 10 }, (_, i) => i + 1);
+
+  const handleGetMatch = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post(`${backendURL}/game/get-match`, {
+        round: selectedRound
+      });
+      setMatch(response.data);
+    } catch (error) {
+      console.error('Error fetching match:', error);
+    } finally {
+      setLoading(false);
     }
-    
-    if (selectedPlayer1 === selectedPlayer2) {
-      alert("Cannot start a match with the same player. Please select two different players.");
-      return;
-    }
-    
-    // In a real application, you would call your backend API here
-    alert(`Starting match: ${selectedPlayer1} vs ${selectedPlayer2} in ${currentRound}`);
   };
-  
+
+  const handleStartMatch = () => {
+    // Handle starting the match here
+    console.log('Starting match:', match);
+  };
+
   return (
-    <div className="match-starter-container">
-      <h1>Start a New Match</h1>
-      
-      <div className="match-form">
-        <div className="form-group">
-          <label>Round:</label>
-          <select 
-            value={currentRound}
-            onChange={(e) => setCurrentRound(e.target.value)}
-            className="select-input"
-          >
-            {rounds.map((round, index) => (
-              <option key={index} value={round}>{round}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="players-container">
-          <div className="player-select">
-            <h3>Player 1</h3>
-            <select 
-              value={selectedPlayer1}
-              onChange={(e) => setSelectedPlayer1(e.target.value)}
-              className="select-input"
-            >
-              <option value="">Select Player 1</option>
-              {players.map((player) => (
-                <option key={player.id} value={player.name}>
-                  {player.name} ({player.handle}) - Seed #{player.seed}
-                </option>
-              ))}
-            </select>
-          </div>
+    <div className="min-h-screen bg-[#242424] p-4 sm:p-6 md:p-8">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-[#2a2a2a] rounded-lg p-4 sm:p-6 shadow-lg border border-[#646cff]/20">
+          <h2 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-white">Select Match Round</h2>
           
-          <div className="vs-indicator">VS</div>
-          
-          <div className="player-select">
-            <h3>Player 2</h3>
-            <select 
-              value={selectedPlayer2}
-              onChange={(e) => setSelectedPlayer2(e.target.value)}
-              className="select-input"
+          <div className="space-y-6">
+            <div className="relative">
+              <select
+                value={selectedRound}
+                onChange={(e) => setSelectedRound(Number(e.target.value))}
+                className="w-full bg-[#1a1a1a] border border-[#646cff]/30 text-white rounded-lg px-4 py-2 
+                         appearance-none focus:outline-none focus:border-[#646cff] transition-colors"
+              >
+                {rounds.map((round) => (
+                  <option key={round} value={round} className="bg-[#1a1a1a]">
+                    Round {round}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <svg className="w-5 h-5 text-[#646cff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+
+            <button
+              onClick={handleGetMatch}
+              disabled={loading}
+              className="w-full bg-[#646cff] text-white font-medium py-2 px-4 rounded-lg
+                       hover:bg-[#646cff]/90 transition-colors disabled:opacity-50"
             >
-              <option value="">Select Player 2</option>
-              {players.map((player) => (
-                <option key={player.id} value={player.name}>
-                  {player.name} ({player.handle}) - Seed #{player.seed}
-                </option>
-              ))}
-            </select>
+              {loading && (
+                <svg className="animate-spin inline-block mr-2 h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+              )}
+              {loading ? 'Finding Match...' : 'Get Next Match'}
+            </button>
           </div>
         </div>
-        
-        <div className="match-settings">
-          <h3>Match Settings</h3>
-          <div className="form-group">
-            <label>Time Limit (minutes):</label>
-            <input type="number" defaultValue={120} min={5} className="number-input" />
+
+        {match && (
+          <div className="mt-4 sm:mt-6 bg-[#2a2a2a] rounded-lg p-4 sm:p-8 shadow-lg border border-[#646cff]/20">
+            <h2 className="text-xl sm:text-2xl font-semibold mb-6 sm:mb-8 text-white text-center">Match Details</h2>
+            <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+              <div className="text-center w-full sm:w-auto px-4 sm:px-6 py-3 bg-[#1a1a1a] rounded-lg border border-[#646cff]/30">
+                <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-[#646cff] to-[#8f95ff] bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(100,108,255,0.3)]">
+                  {match.player1.cf_handle}
+                </span>
+              </div>
+              <div className="px-4">
+                <span className="text-xl sm:text-2xl font-bold text-[#646cff]">VS</span>
+              </div>
+              <div className="text-center w-full sm:w-auto px-4 sm:px-6 py-3 bg-[#1a1a1a] rounded-lg border border-[#646cff]/30">
+                <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-[#646cff] to-[#8f95ff] bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(100,108,255,0.3)]">
+                  {match.player2.cf_handle}
+                </span>
+              </div>
+            </div>
+            <div className="mt-6 sm:mt-8 flex justify-center">
+              <button
+                onClick={handleStartMatch}
+                className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-[#646cff] text-white font-medium rounded-lg
+                         hover:bg-[#646cff]/90 transition-colors transform hover:scale-105"
+              >
+                Start Match
+              </button>
+            </div>
           </div>
-          <div className="form-group">
-            <label>Number of Problems:</label>
-            <input type="number" defaultValue={5} min={1} max={10} className="number-input" />
-          </div>
-        </div>
-        
-        <button onClick={handleStartMatch} className="start-button">
-          Start Match
-        </button>
-      </div>
-      
-      <div className="upcoming-matches">
-        <h2>Upcoming Matches</h2>
-        <table className="matches-table">
-          <thead>
-            <tr>
-              <th>Round</th>
-              <th>Player 1</th>
-              <th>Player 2</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Round of 16</td>
-              <td>Player 3 (cpp_wizard)</td>
-              <td>Player 14 (functional_prog)</td>
-              <td>Scheduled</td>
-            </tr>
-            <tr>
-              <td>Round of 16</td>
-              <td>Player 6 (graph_theory)</td>
-              <td>Player 11 (dp_master)</td>
-              <td>Scheduled</td>
-            </tr>
-            <tr>
-              <td>Quarter Finals</td>
-              <td>Player 1 (coder123)</td>
-              <td>Player 9 (java_coder)</td>
-              <td>Pending</td>
-            </tr>
-          </tbody>
-        </table>
+        )}
       </div>
     </div>
   );

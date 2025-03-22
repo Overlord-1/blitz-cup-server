@@ -8,7 +8,7 @@ function Layout({ children }) {
     <div className="app">
       <header className="header">
         <div className="logo">
-          <h1>Codeforces Blitz</h1>
+          <h1>IEEE Blitz</h1>
         </div>
         <nav className="nav">
           <Link 
@@ -38,10 +38,6 @@ function Layout({ children }) {
       <main className="main-content">
         {children}
       </main>
-
-      <footer className="footer">
-        <p>&copy; 2025 Codeforces Blitz. All rights reserved.</p>
-      </footer>
     </div>
   );
 }
