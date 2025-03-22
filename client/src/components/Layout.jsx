@@ -5,7 +5,7 @@ function Layout({ children }) {
   const [activePage, setActivePage] = useState(window.location.pathname);
 
   return (
-    <div className="app">
+    <div className="flex flex-col justify-center align-middle text-center app-wrapper">
       <header className="header">
         <div className="logo">
           <h1>Codeforces Blitz</h1>

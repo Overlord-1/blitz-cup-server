@@ -50,59 +50,59 @@ const Leaderboard = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 leaderboard-container">
-      <h1>Codeforces Blitz Leaderboard</h1>
-      <div className="search-container">
+    <div className="flex flex-col gap-4 align-middle p-4 min-h-screen">
+      <h1 className="text-3xl font-bold text-center mb-4">Codeforces Blitz Leaderboard</h1>
+      <div className="flex justify-center mb-4">
         <input
           type="text"
           placeholder="Search by player name or handle..."
-          className="search-input"
+          className="search-input p-2 border border-gray-300 rounded-md w-1/2"
         />
       </div>
-      <table className="leaderboard-table">
-        <thead>
+      <table className="min-w-full shadow-md rounded-lg overflow-hidden">
+        <thead className="bg-gray-200">
           <tr>
-            <th onClick={() => requestSort('rank')}>
+            <th className="p-4 cursor-pointer text-black" onClick={() => requestSort('rank')}>
               Rank{getSortIndicator('rank')}
             </th>
-            <th onClick={() => requestSort('name')}>
+            <th className="p-4 cursor-pointer text-black" onClick={() => requestSort('name')}>
               Player{getSortIndicator('name')}
             </th>
-            <th onClick={() => requestSort('handle')}>
+            <th className="p-4 cursor-pointer text-black" onClick={() => requestSort('handle')}>
               Handle{getSortIndicator('handle')}
             </th>
-            <th onClick={() => requestSort('rating')}>
+            <th className="p-4 cursor-pointer text-black" onClick={() => requestSort('rating')}>
               Rating{getSortIndicator('rating')}
             </th>
-            <th onClick={() => requestSort('wins')}>
+            <th className="p-4 cursor-pointer text-black" onClick={() => requestSort('wins')}>
               Wins{getSortIndicator('wins')}
             </th>
-            <th onClick={() => requestSort('losses')}>
+            <th className="p-4 cursor-pointer text-black" onClick={() => requestSort('losses')}>
               Losses{getSortIndicator('losses')}
             </th>
-            <th onClick={() => requestSort('winRate')}>
+            <th className="p-4 cursor-pointer text-black" onClick={() => requestSort('winRate')}>
               Win Rate{getSortIndicator('winRate')}
             </th>
           </tr>
         </thead>
         <tbody>
           {players.map((player) => (
-            <tr key={player.id}>
-              <td>{player.rank}</td>
-              <td>{player.name}</td>
-              <td className="handle">{player.handle}</td>
-              <td className="rating">{player.rating}</td>
-              <td>{player.wins}</td>
-              <td>{player.losses}</td>
-              <td>{player.winRate}</td>
+            <tr key={player.id} className="border-t">
+              <td className="p-4">{player.rank}</td>
+              <td className="p-4">{player.name}</td>
+              <td className="p-4">{player.handle}</td>
+              <td className="p-4">{player.rating}</td>
+              <td className="p-4">{player.wins}</td>
+              <td className="p-4">{player.losses}</td>
+              <td className="p-4">{player.winRate}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="pagination">
-        <button className="pagination-button">Previous</button>
-        <span className="page-info">Page 1 of 3</span>
-        <button className="pagination-button">Next</button>
+      <div className="flex justify-between items-center mt-4">
+        <button className="bg-blue-500 text-white px-4 py-2 rounded-md">Previous</button>
+        <span className="text-gray-700">Page 1 of 3</span>
+        <button className="bg-blue-500 text-white px-4 py-2 rounded-md">Next</button>
       </div>
     </div>
   );
