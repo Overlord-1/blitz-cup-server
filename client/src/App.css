@@ -1,9 +1,7 @@
 @import "tailwindcss";
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+
+#root{
+  width: 100%;
 }
 
 .app-wrapper ::before{
@@ -18,46 +16,4 @@
   background-position: center;
   filter: blur(5px);
   z-index: -1;
-}
-
-.match-box {
-  position: relative;
-}
-
-.match-box::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 16px;
-  height: 2px;
-  background-color: #4B5563;
-}
-
-.left-bracket .match-box::after {
-  right: -16px;
-}
-
-.right-bracket .match-box::after {
-  left: -16px;
-}
-
-.matches {
-  position: relative;
-}
-
-.matches::after {
-  content: '';
-  position: absolute;
-  top: 25%;
-  bottom: 25%;
-  width: 2px;
-  background-color: #4B5563;
-}
-
-.left-bracket .matches::after {
-  right: -16px;
-}
-
-.right-bracket .matches::after {
-  left: -16px;
 }
