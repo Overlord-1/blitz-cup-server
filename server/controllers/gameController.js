@@ -40,3 +40,37 @@ export const getMatch = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Begin-Tournament
+export const initializeTournament = async (req, res) => {
+  try {
+    // Get all users that are eligible for the tournament
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, cf_handle')
+      .eq("max_round", 0)
+      .limit(32);
+
+    if (error) throw error;
+
+    if (!users || users.length < 32) {
+      return res.status(400).json({ 
+        error: 'Not enough participants available for the tournament' 
+      });
+    }
+
+    // Shuffle the array of users randomly
+    const shuffledParticipants = users
+      .slice(0, 32)
+      .sort(() => Math.random() - 0.5);
+
+    res.status(200).json({
+      participants: shuffledParticipants,
+      message: 'Tournament initialized successfully'
+    });
+
+  } catch (error) {
+    console.error('Error initializing tournament:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

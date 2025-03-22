@@ -7,7 +7,7 @@ const Start = () => {
   const [loading, setLoading] = useState(false);
   const [match, setMatch] = useState(null);
 
-  const rounds = Array.from({ length: 10 }, (_, i) => i + 1);
+  const rounds = Array.from({ length: 5 }, (_, i) => i + 1);
 
   const handleGetMatch = async () => {
     setLoading(true);
