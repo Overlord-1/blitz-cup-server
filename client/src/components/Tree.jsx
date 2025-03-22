@@ -1,173 +1,126 @@
 import React from 'react';
+import Round from './Round';
 
 const TournamentBracket = () => {
-  // Hardcoded data for a tournament of 32 participants
-  // Split into left and right sides of the bracket
-  const leftBracket = [
-    {
-      name: "Round of 32",
-      matches: [
-        { player1: { name: "Player 1", seed: 1 }, player2: { name: "Player 32", seed: 32 }, score: "2-0" },
-        { player1: { name: "Player 16", seed: 16 }, player2: { name: "Player 17", seed: 17 }, score: "2-1" },
-        { player1: { name: "Player 8", seed: 8 }, player2: { name: "Player 25", seed: 25 }, score: "2-0" },
-        { player1: { name: "Player 9", seed: 9 }, player2: { name: "Player 24", seed: 24 }, score: "2-1" },
-        { player1: { name: "Player 4", seed: 4 }, player2: { name: "Player 29", seed: 29 }, score: "2-0" },
-        { player1: { name: "Player 13", seed: 13 }, player2: { name: "Player 20", seed: 20 }, score: "0-2" },
-        { player1: { name: "Player 5", seed: 5 }, player2: { name: "Player 28", seed: 28 }, score: "2-0" },
-        { player1: { name: "Player 12", seed: 12 }, player2: { name: "Player 21", seed: 21 }, score: "2-1" },
-      ]
-    },
-    {
-      name: "Round of 16",
-      matches: [
-        { player1: { name: "Player 1", seed: 1 }, player2: { name: "Player 16", seed: 16 }, score: "2-0" },
-        { player1: { name: "Player 8", seed: 8 }, player2: { name: "Player 9", seed: 9 }, score: "1-2" },
-        { player1: { name: "Player 4", seed: 4 }, player2: { name: "Player 20", seed: 20 }, score: "2-0" },
-        { player1: { name: "Player 5", seed: 5 }, player2: { name: "Player 12", seed: 12 }, score: "2-1" },
-      ]
-    },
-    {
-      name: "Quarter Finals",
-      matches: [
-        { player1: { name: "Player 1", seed: 1 }, player2: { name: "Player 9", seed: 9 }, score: "2-1" },
-        { player1: { name: "Player 4", seed: 4 }, player2: { name: "Player 5", seed: 5 }, score: "0-2" },
-      ]
-    },
-    {
-      name: "Semi Finals",
-      matches: [
-        { player1: { name: "Player 1", seed: 1 }, player2: { name: "Player 5", seed: 5 }, score: "2-0" },
-      ]
-    },
-  ];
-  
-  const rightBracket = [
-    {
-      name: "Round of 32",
-      matches: [
-        { player1: { name: "Player 2", seed: 2 }, player2: { name: "Player 31", seed: 31 }, score: "2-0" },
-        { player1: { name: "Player 15", seed: 15 }, player2: { name: "Player 18", seed: 18 }, score: "1-2" },
-        { player1: { name: "Player 7", seed: 7 }, player2: { name: "Player 26", seed: 26 }, score: "2-0" },
-        { player1: { name: "Player 10", seed: 10 }, player2: { name: "Player 23", seed: 23 }, score: "2-1" },
-        { player1: { name: "Player 3", seed: 3 }, player2: { name: "Player 30", seed: 30 }, score: "2-0" },
-        { player1: { name: "Player 14", seed: 14 }, player2: { name: "Player 19", seed: 19 }, score: "2-1" },
-        { player1: { name: "Player 6", seed: 6 }, player2: { name: "Player 27", seed: 27 }, score: "2-0" },
-        { player1: { name: "Player 11", seed: 11 }, player2: { name: "Player 22", seed: 22 }, score: "2-1" },
-      ]
-    },
-    {
-      name: "Round of 16",
-      matches: [
-        { player1: { name: "Player 2", seed: 2 }, player2: { name: "Player 18", seed: 18 }, score: "2-0" },
-        { player1: { name: "Player 7", seed: 7 }, player2: { name: "Player 10", seed: 10 }, score: "0-2" },
-        { player1: { name: "Player 3", seed: 3 }, player2: { name: "Player 14", seed: 14 }, score: "2-1" },
-        { player1: { name: "Player 6", seed: 6 }, player2: { name: "Player 11", seed: 11 }, score: "2-0" },
-      ]
-    },
-    {
-      name: "Quarter Finals",
-      matches: [
-        { player1: { name: "Player 2", seed: 2 }, player2: { name: "Player 10", seed: 10 }, score: "2-0" },
-        { player1: { name: "Player 3", seed: 3 }, player2: { name: "Player 6", seed: 6 }, score: "1-2" },
-      ]
-    },
-    {
-      name: "Semi Finals",
-      matches: [
-        { player1: { name: "Player 2", seed: 2 }, player2: { name: "Player 6", seed: 6 }, score: "2-1" },
-      ]
-    },
-  ];
-  
-  const finals = {
-    name: "Finals",
-    matches: [
-      { player1: { name: "Player 1", seed: 1 }, player2: { name: "Player 2", seed: 2 }, score: "2-1" },
-    ]
-  };
-
   return (
-    <div className="tournament-container">
-      <h1>Tournament Bracket</h1>
-      <div className="bracket-wrapper">
-        <div className="bracket-container">
-          {/* Left side of bracket */}
-          <div className="bracket-side left-bracket">
-            {leftBracket.map((round, roundIndex) => (
-              <div key={`left-${roundIndex}`} className="round">
-                <h3 className="round-title">{round.name}</h3>
-                <div className="matches">
-                  {round.matches.map((match, matchIndex) => (
-                    <div key={`left-${roundIndex}-${matchIndex}`} className="match-container">
-                      <div className="match">
-                        <div className={`player ${match.score.charAt(0) > match.score.charAt(2) ? 'winner' : ''}`}>
-                          <span className="seed">#{match.player1.seed}</span>
-                          <span className="name">{match.player1.name}</span>
-                          <span className="score">{match.score.charAt(0)}</span>
-                        </div>
-                        <div className={`player ${match.score.charAt(0) < match.score.charAt(2) ? 'winner' : ''}`}>
-                          <span className="seed">#{match.player2.seed}</span>
-                          <span className="name">{match.player2.name}</span>
-                          <span className="score">{match.score.charAt(2)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+    <div className="tournament-container min-h-screen bg-gray-900 p-8">
+      <h1 className="text-4xl font-bold text-center mb-12 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+        Tournament Bracket
+      </h1>
+      <div className="bracket-wrapper flex justify-center gap-16">
+        {/* Left Bracket */}
+        <div className="flex flex-row gap-4 left-bracket">
+          <Round size={32} desc='Round of 32'></Round>
+          <Round size={16} desc='Round of 16'></Round>
+          <Round size={8} desc='Quarter-Finals'></Round>
+          <Round size={4} desc='Semi-Finals'></Round>
+        </div>
+
+        {/* Finals */}
+        <div className="finals-column">
+          <h3 className="text-white text-center font-semibold mb-4">Finals</h3>
+          <div className="match-box w-48 bg-gradient-to-r from-yellow-900/30 to-yellow-800/30 p-2 rounded-lg border border-yellow-700">
+            <div className="player p-2 border-l-4 border-yellow-500 bg-yellow-900/30 rounded mb-1">
+              <div className="flex justify-between items-center">
+                <span className="text-white">Winner L</span>
+                <span className="text-yellow-400 text-sm">?</span>
               </div>
-            ))}
-          </div>
-          
-          {/* Finals (center) */}
-          <div className="finals-bracket">
-            <div className="round">
-              <h3 className="round-title">{finals.name}</h3>
-              <div className="matches">
-                {finals.matches.map((match, matchIndex) => (
-                  <div key={`finals-${matchIndex}`} className="match-container finals-match">
-                    <div className="match">
-                      <div className={`player ${match.score.charAt(0) > match.score.charAt(2) ? 'winner champion' : ''}`}>
-                        <span className="seed">#{match.player1.seed}</span>
-                        <span className="name">{match.player1.name}</span>
-                        <span className="score">{match.score.charAt(0)}</span>
-                      </div>
-                      <div className={`player ${match.score.charAt(0) < match.score.charAt(2) ? 'winner champion' : ''}`}>
-                        <span className="seed">#{match.player2.seed}</span>
-                        <span className="name">{match.player2.name}</span>
-                        <span className="score">{match.score.charAt(2)}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            </div>
+            <div className="player p-2 border-l-4 border-transparent bg-gray-700/30 rounded">
+              <div className="flex justify-between items-center">
+                <span className="text-white">Winner R</span>
+                <span className="text-gray-400 text-sm">?</span>
               </div>
             </div>
           </div>
-          
-          {/* Right side of bracket */}
-          <div className="bracket-side right-bracket">
-            {rightBracket.map((round, roundIndex) => (
-              <div key={`right-${roundIndex}`} className="round">
-                <h3 className="round-title">{round.name}</h3>
-                <div className="matches">
-                  {round.matches.map((match, matchIndex) => (
-                    <div key={`right-${roundIndex}-${matchIndex}`} className="match-container">
-                      <div className="match">
-                        <div className={`player ${match.score.charAt(0) > match.score.charAt(2) ? 'winner' : ''}`}>
-                          <span className="seed">#{match.player1.seed}</span>
-                          <span className="name">{match.player1.name}</span>
-                          <span className="score">{match.score.charAt(0)}</span>
-                        </div>
-                        <div className={`player ${match.score.charAt(0) < match.score.charAt(2) ? 'winner' : ''}`}>
-                          <span className="seed">#{match.player2.seed}</span>
-                          <span className="name">{match.player2.name}</span>
-                          <span className="score">{match.score.charAt(2)}</span>
-                        </div>
-                      </div>
+        </div>
+
+        {/* Right Bracket */}
+        <div className="flex flex-row gap-4 right-bracket">
+        <div className="flex flex-col justify-center round mb-8">
+            <h3 className="text-white text-center font-semibold mb-4">Semi-Finals</h3>
+            <div className="matches flex flex-col gap-4">
+              {[...Array(2)].map((_, i) => (
+                <div key={`r1-right-${i}`} className="match-box w-48 bg-gray-800 p-2 rounded-lg border border-gray-700">
+                  <div className="player p-2 border-l-4 border-blue-500 bg-gray-700/50 rounded mb-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white">Player {32 - (i * 2)}</span>
+                      <span className="text-gray-400 text-sm">1</span>
                     </div>
-                  ))}
+                  </div>
+                  <div className="player p-2 border-l-4 border-transparent bg-gray-700/30 rounded">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white">Player {31 - (i * 2)}</span>
+                      <span className="text-gray-400 text-sm">0</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col justify-center round mb-8">
+            <h3 className="text-white text-center font-semibold mb-4">Quarter-Finals</h3>
+            <div className="matches flex flex-col gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={`r1-right-${i}`} className="match-box w-48 bg-gray-800 p-2 rounded-lg border border-gray-700">
+                  <div className="player p-2 border-l-4 border-blue-500 bg-gray-700/50 rounded mb-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white">Player {32 - (i * 2)}</span>
+                      <span className="text-gray-400 text-sm">1</span>
+                    </div>
+                  </div>
+                  <div className="player p-2 border-l-4 border-transparent bg-gray-700/30 rounded">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white">Player {31 - (i * 2)}</span>
+                      <span className="text-gray-400 text-sm">0</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col justify-center round mb-8">
+            <h3 className="text-white text-center font-semibold mb-4">Round of 16</h3>
+            <div className="matches flex flex-col gap-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={`r1-right-${i}`} className="match-box w-48 bg-gray-800 p-2 rounded-lg border border-gray-700">
+                  <div className="player p-2 border-l-4 border-blue-500 bg-gray-700/50 rounded mb-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white">Player {32 - (i * 2)}</span>
+                      <span className="text-gray-400 text-sm">1</span>
+                    </div>
+                  </div>
+                  <div className="player p-2 border-l-4 border-transparent bg-gray-700/30 rounded">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white">Player {31 - (i * 2)}</span>
+                      <span className="text-gray-400 text-sm">0</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Round of 32 */}
+          <div className="round mb-8">
+            <h3 className="text-white text-center font-semibold mb-4">Round of 32</h3>
+            <div className="matches flex flex-col gap-4">
+              {[...Array(16)].map((_, i) => (
+                <div key={`r1-right-${i}`} className="match-box w-48 bg-gray-800 p-2 rounded-lg border border-gray-700">
+                  <div className="player p-2 border-l-4 border-blue-500 bg-gray-700/50 rounded mb-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white">Player {32 - (i * 2)}</span>
+                      <span className="text-gray-400 text-sm">1</span>
+                    </div>
+                  </div>
+                  <div className="player p-2 border-l-4 border-transparent bg-gray-700/30 rounded">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white">Player {31 - (i * 2)}</span>
+                      <span className="text-gray-400 text-sm">0</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
