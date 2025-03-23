@@ -1,8 +1,9 @@
 import express from 'express';
 const router = express.Router();
-import { getMatch } from '../controllers/gameController.js';
+import { startgame, getMatches, getParticipants} from '../controllers/gameController.js';
 
-router.post('/start-game', getMatch);
-// router.get('/initialize-tournament', initializeTournament);
+router.post('/start-game', startgame);
+router.get('/get-matches', getMatches);
+router.get('/get-participants', getParticipants);
 
 export default router;

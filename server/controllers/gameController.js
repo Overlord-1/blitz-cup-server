@@ -1,6 +1,6 @@
 import { supabase } from "../config/connectDB.js";
 
-export const getMatch = async (req, res) => {
+export const startgame = async (req, res) => {
   try {
     const { round } = req.body;
 
@@ -89,4 +89,40 @@ export const getMatch = async (req, res) => {
 };
 
 
+export const getMatches = async (req, res) => {
+  try {
+    // Fetch all match data from the 'matches' table
+    const { data: matches, error } = await supabase
+      .from('matches')
+      .select('*');
 
+    if (error) throw error;
+
+    // Convert matches to an object with match id as the key
+    const matchObject = matches.reduce((acc, match) => {
+      acc[match.id] = match;
+      return acc;
+    }, {});
+
+    res.status(200).json(matchObject);
+  } catch (error) {
+    console.error('Error fetching matches:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getParticipants = async (req, res) => {
+  try {
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, cf_handle')
+      .order('id');
+
+    if (error) throw error;
+
+    res.status(200).json({ users });
+  } catch (error) {
+    console.error('Error fetching participants:', error);
+    res.status(500).json({ error: 'Failed to fetch participants' });
+  }
+};

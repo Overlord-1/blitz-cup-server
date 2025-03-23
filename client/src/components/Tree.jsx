@@ -13,14 +13,34 @@ const TournamentBracket = () => {
     setError(null);
     
     try {
-      const response = await axios.get(`${backendURL}/game/initialize-tournament`);
-      const { participants: fetchedParticipants } = response.data;
+      // Start the tournament
+      await axios.post(`${backendURL}/game/start-game`, { round: 1 });
       
-      if (!fetchedParticipants || fetchedParticipants.length !== 32) {
+      // Get matches data
+      const matchesResponse = await axios.get(`${backendURL}/game/get-matches`);
+      const matchesData = matchesResponse.data;
+
+      // Get participants data
+      const participantsResponse = await axios.get(`${backendURL}/game/get-participants`);
+      const { users } = participantsResponse.data;
+
+      // Create participants array based on matches
+      const orderedParticipants = [];
+      Object.values(matchesData)
+        .sort((a, b) => a.match_number - b.match_number)
+        .forEach(match => {
+          const player1 = users.find(u => u.id === match.p1);
+          const player2 = users.find(u => u.id === match.p2);
+          orderedParticipants.push(player1, player2);
+        });
+
+      if (orderedParticipants.length !== 32) {
         throw new Error('Need exactly 32 participants to start the tournament');
       }
 
-      setParticipants(fetchedParticipants);
+      setParticipants(orderedParticipants);
+      setMatches(matchesData);
+
     } catch (err) {
       setError(err.message || 'Failed to initialize tournament');
       console.error('Tournament initialization error:', err);
