@@ -126,3 +126,36 @@ export const getParticipants = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch participants' });
   }
 };
+
+export const reset = async (req, res) => {
+  try {
+    // Delete all matches
+    const { error: matchError } = await supabase
+      .from('matches')
+      .delete()
+      .neq('match_number', -1);
+
+    if (matchError) throw matchError;
+
+    // Reset all users max_round
+    const { error: userError } = await supabase
+      .from('users')
+      .update({ max_round: 0 })
+      .eq('max_round', 1);
+
+    if (userError) throw userError;
+
+    // Reset all questions to unused
+    const { error: questionError } = await supabase
+      .from('problemset')
+      .update({ used: false })
+      .eq('used', true);
+
+    if (questionError) throw questionError;
+
+    res.status(200).json({ message: 'Game reset successfully' });
+  } catch (error) {
+    console.error('Error resetting game:', error);
+    res.status(500).json({ error: 'Failed to reset game' });
+  }
+}
