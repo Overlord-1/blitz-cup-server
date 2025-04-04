@@ -1,9 +1,12 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import requests
 import time
 import threading
 
 app = Flask(__name__)
+cors=CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 def check_problem_solution(handle1, handle2, problem_id):
     """

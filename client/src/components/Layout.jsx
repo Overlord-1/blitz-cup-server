@@ -64,6 +64,23 @@ function Layout({ children }) {
                   <span className="font-medium">Start Match</span>
                 </span>
               </Link>
+              <Link 
+                to="/test" 
+                className={`nav-link relative px-3 py-2 transition-all duration-300 hover:text-blue-400
+                  ${activePage === '/test' 
+                    ? 'text-blue-400 after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-blue-400' 
+                    : 'text-gray-300 hover:transform hover:-translate-y-0.5'
+                  }`}
+                onClick={() => setActivePage('/test')}
+              >
+                <span className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="font-medium">Test Server</span>
+                </span>
+              </Link>
             </div>
           </div>
         </nav>
