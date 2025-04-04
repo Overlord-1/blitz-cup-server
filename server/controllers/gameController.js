@@ -7,20 +7,24 @@ export const startgame = async (req, res) => {
     if (!round || typeof round !== "number" || round < 1) {
       return res.status(400).json({ error: "Invalid round parameter" });
     }
+
+    // First, insert the tournament structure
+    const { error: structureError } = await supabase.rpc('initialize_tournament_structure');
+    
+    if (structureError) {
+      throw structureError;
+    }
+
     // Get all eligible players
     const { data: users, error: userError } = await supabase
       .from("users")
       .select("cf_handle, id")
       .eq("max_round", round - 1)
-      .limit(32);  // Get enough users for 16 matches
+      .limit(32);
 
-    if (userError) {
-      return res.status(401).json({ error: "Only allowed for the first round" });
-    }
+    if (userError) throw userError;
     if (!users?.length >= 32) {
-      return res
-        .status(404)
-        .json({ error: "Not enough users found for this round" });
+      return res.status(404).json({ error: "Not enough users found for this round" });
     }
 
     // Get unused questions
@@ -32,44 +36,48 @@ export const startgame = async (req, res) => {
 
     if (questionError) throw questionError;
     if (!questions?.length || questions.length < 16) {
-      return res
-        .status(404)
-        .json({ error: "Not enough unused questions available" });
+      return res.status(404).json({ error: "Not enough unused questions available" });
     }
 
     const shuffledUsers = users.sort(() => Math.random() - 0.5);
-    const matches = [];
-
-    for (let i = 0; i < 16; i++) {
-      if (!shuffledUsers[i * 2]?.id || !shuffledUsers[i * 2 + 1]?.id || !questions[i]?.id) {
-        return res.status(400).json({ error: "Invalid user or question data" });
-      }
-
-      const match = {
-        level: round,
-        p1: shuffledUsers[i * 2].id,
-        p2: shuffledUsers[i * 2 + 1].id,
-        cf_question: questions[i].id,
-        title: questions[i].link
-      };
-      matches.push(match);
-    }
-
-    // Insert matches
-    const { error: matchError } = await supabase
+    
+    // Get round 1 matches
+    const { data: roundMatches, error: matchError } = await supabase
       .from("matches")
-      .insert(matches);
+      .select("*")  // Changed from just "id" to "*"
+      .eq("level", 1)
+      .order('match_number', { ascending: true });
 
     if (matchError) throw matchError;
+    if (!roundMatches?.length) {
+      throw new Error("No matches found for round 1");
+    }
+
+    // Update matches with players and questions
+    const updates = roundMatches.slice(0, 16).map((match, i) => ({  // Limit to first 16 matches
+      id: match.id,
+      p1: shuffledUsers[i * 2]?.id,
+      p2: shuffledUsers[i * 2 + 1]?.id,
+      cf_question: questions[i]?.id,
+      title: questions[i]?.link,
+      match_number: match.match_number
+    }));
+
+    // Update matches in batch
+    const { error: updateError } = await supabase
+      .from("matches")
+      .upsert(updates);
+
+    if (updateError) throw updateError;
 
     // Update players max_round
     const playerIds = shuffledUsers.slice(0, 32).map(user => user.id);
-    const { error: updateError } = await supabase
+    const { error: playerUpdateError } = await supabase
       .from("users")
       .update({ max_round: round })
       .in("id", playerIds);
 
-    if (updateError) throw updateError;
+    if (playerUpdateError) throw playerUpdateError;
 
     // Mark questions as used
     const questionIds = questions.slice(0, 16).map(q => q.id);
@@ -80,7 +88,7 @@ export const startgame = async (req, res) => {
 
     if (usedError) throw usedError;
 
-    res.status(200).send({ message: "Successfully created matches", matches });
+    res.status(200).send({ message: "Successfully initialized tournament" });
 
   } catch (error) {
     console.error("Error:", error);
@@ -91,20 +99,16 @@ export const startgame = async (req, res) => {
 
 export const getMatches = async (req, res) => {
   try {
-    // Fetch all match data from the 'matches' table
     const { data: matches, error } = await supabase
       .from('matches')
-      .select('*');
+      .select('*')
+      .neq('match_number', -1)
+      .order('match_number', { ascending: true });
 
     if (error) throw error;
 
-    // Convert matches to an object with match id as the key
-    const matchObject = matches.reduce((acc, match) => {
-      acc[match.id] = match;
-      return acc;
-    }, {});
-
-    res.status(200).json(matchObject);
+    // Return array directly instead of converting to object
+    res.status(200).json(matches);
   } catch (error) {
     console.error('Error fetching matches:', error.message);
     res.status(500).json({ error: error.message });

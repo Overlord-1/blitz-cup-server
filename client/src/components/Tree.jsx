@@ -14,25 +14,26 @@ const TournamentBracket = () => {
     try {
       // Get matches data
       const matchesResponse = await axios.get(`${backendURL}/game/get-matches`);
-      const matchesData = matchesResponse.data;
-
+      const matchesData = matchesResponse.data;  // Now it's already an array and sorted
+  
       // Get participants data
       const participantsResponse = await axios.get(`${backendURL}/game/get-participants`);
       const { users } = participantsResponse.data;
-
+  
       const orderedParticipants = [];
-      Object.values(matchesData)
-        .sort((a, b) => a.match_number - b.match_number)
-        .forEach(match => {
+      matchesData.forEach(match => {
+        if (match.p1 && match.p2) {  // Only add if players are assigned
           const player1 = users.find(u => u.id === match.p1);
           const player2 = users.find(u => u.id === match.p2);
-          orderedParticipants.push(player1, player2);
-        });
-
+          if (player1) orderedParticipants.push(player1);
+          if (player2) orderedParticipants.push(player2);
+        }
+      });
+  
       if (orderedParticipants.length !== 32) {
         throw new Error('Need exactly 32 participants to start the tournament');
       }
-
+  
       setParticipants(orderedParticipants);
       localStorage.setItem('tournamentParticipants', JSON.stringify(orderedParticipants));
     } catch (err) {
@@ -150,7 +151,7 @@ const TournamentBracket = () => {
         </div>
 
         {/* Finals */}
-        <div className="finals-column mx-8 self-center mt-32">
+        <div className="finals-column mx-8 self-center -mt-4">
           <h3 className="text-white text-center font-semibold mb-2">Finals</h3>
           <div className="match-box w-40 bg-gradient-to-r from-yellow-900/30 to-yellow-800/30 p-2 rounded-lg border border-yellow-700">
             <div className="player p-2 border-l-4 border-yellow-500 bg-yellow-900/30 rounded mb-1">
