@@ -7,7 +7,11 @@ import threading
 app = Flask(__name__)
 cors=CORS(app)
 
-def check_problem_solution(handle1, handle2, problem_id):
+# Dictionary to store active tracking threads, not just results
+tracking_threads = {}
+active_tracking = {}
+
+def check_problem_solution(handle1, handle2, problem_id, tracking_id):
     """
     Poll Codeforces API to check which user solves a problem first.
     
@@ -15,6 +19,7 @@ def check_problem_solution(handle1, handle2, problem_id):
         handle1 (str): First Codeforces handle
         handle2 (str): Second Codeforces handle
         problem_id (str): Problem ID in format "contestId/index" (e.g. "1800/A")
+        tracking_id (str): Unique tracking identifier
     
     Returns:
         dict: Result containing winner and timing information
@@ -30,7 +35,11 @@ def check_problem_solution(handle1, handle2, problem_id):
         
         poll_interval = 5  # seconds
         
-        while True:
+        # Track if this thread should stop
+        should_stop = threading.Event()
+        tracking_threads[tracking_id] = should_stop
+        
+        while not should_stop.is_set():
             # Check first handle
             if not handle1_solved:
                 try:
@@ -73,7 +82,7 @@ def check_problem_solution(handle1, handle2, problem_id):
             if handle1_solved and handle2_solved:
                 # Both solved, compare times
                 if handle1_time < handle2_time:
-                    return {
+                    result = {
                         "winner": handle1,
                         "loser": handle2,
                         "winner_time": handle1_time,
@@ -82,7 +91,7 @@ def check_problem_solution(handle1, handle2, problem_id):
                         "status": "both_solved"
                     }
                 else:
-                    return {
+                    result = {
                         "winner": handle2,
                         "loser": handle1,
                         "winner_time": handle2_time,
@@ -90,8 +99,13 @@ def check_problem_solution(handle1, handle2, problem_id):
                         "time_difference": handle1_time - handle2_time,
                         "status": "both_solved"
                     }
+                active_tracking[tracking_id] = result
+                # Clean up
+                if tracking_id in tracking_threads:
+                    del tracking_threads[tracking_id]
+                return result
             elif handle1_solved:
-                return {
+                result = {
                     "winner": handle1,
                     "loser": handle2,
                     "winner_time": handle1_time,
@@ -99,8 +113,13 @@ def check_problem_solution(handle1, handle2, problem_id):
                     "status": "one_solved",
                     "message": f"{handle2} has not solved the problem yet"
                 }
+                active_tracking[tracking_id] = result
+                # Clean up
+                if tracking_id in tracking_threads:
+                    del tracking_threads[tracking_id]
+                return result
             elif handle2_solved:
-                return {
+                result = {
                     "winner": handle2,
                     "loser": handle1,
                     "winner_time": handle2_time,
@@ -108,18 +127,25 @@ def check_problem_solution(handle1, handle2, problem_id):
                     "status": "one_solved",
                     "message": f"{handle1} has not solved the problem yet"
                 }
+                active_tracking[tracking_id] = result
+                # Clean up
+                if tracking_id in tracking_threads:
+                    del tracking_threads[tracking_id]
+                return result
             
             # Wait before polling again
             time.sleep(poll_interval)
     except Exception as e:
-        return {
+        result = {
             "error": str(e),
             "status": "error",
             "message": f"An error occurred while tracking: {str(e)}"
         }
-
-# Store active tracking tasks
-active_tracking = {}
+        active_tracking[tracking_id] = result
+        # Clean up
+        if tracking_id in tracking_threads:
+            del tracking_threads[tracking_id]
+        return result
 
 @app.route('/start_tracking', methods=['POST'])
 def start_tracking():
@@ -138,8 +164,7 @@ def start_tracking():
         # Start tracking in a separate thread
         def tracking_thread():
             try:
-                result = check_problem_solution(handle1, handle2, problem_id)
-                active_tracking[tracking_id] = result
+                check_problem_solution(handle1, handle2, problem_id, tracking_id)
             except Exception as e:
                 active_tracking[tracking_id] = {
                     "error": str(e),
@@ -179,12 +204,64 @@ def check_status(tracking_id):
             "message": f"An error occurred while checking status: {str(e)}"
         }), 500
 
+@app.route('/stop_tracking', methods=['POST'])
+def stop_tracking():
+    try:
+        data = request.json
+        tracking_ids = data.get('tracking_ids', [])
+        
+        if not tracking_ids or not isinstance(tracking_ids, list):
+            return jsonify({"error": "Missing or invalid tracking_ids parameter", "status": "error"}), 400
+        
+        results = {}
+        for tracking_id in tracking_ids:
+            # Check if tracking exists and has a result
+            if tracking_id in active_tracking:
+                status = active_tracking[tracking_id]
+                
+                # Check if it's already complete
+                if isinstance(status, dict) and status.get("status") in ["both_solved", "one_solved", "error"]:
+                    results[tracking_id] = {
+                        "stopped": False,
+                        "already_complete": True,
+                        "result": status
+                    }
+                # If still tracking, stop the thread
+                elif tracking_id in tracking_threads:
+                    tracking_threads[tracking_id].set()  # Signal the thread to stop
+                    results[tracking_id] = {
+                        "stopped": True,
+                        "result": active_tracking[tracking_id]
+                    }
+                    # Clean up
+                    del tracking_threads[tracking_id]
+                else:
+                    results[tracking_id] = {
+                        "stopped": False,
+                        "error": "Thread not found but tracking exists"
+                    }
+            else:
+                results[tracking_id] = {
+                    "stopped": False,
+                    "error": "Tracking ID not found"
+                }
+        
+        return jsonify({
+            "status": "success",
+            "results": results
+        })
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
+            "status": "error",
+            "message": f"An error occurred while stopping tracking: {str(e)}"
+        }), 500
+
 @app.route('/list_tracking', methods=['GET'])
 def list_tracking():
     try:
         tracking_info = {}
         for track_id, status in active_tracking.items():
-            # Fixed the typo: Was using status["stat"] instead of status["status"]
             if isinstance(status, dict) and "status" in status and status["status"] == "tracking":
                 parts = track_id.split('_')
                 if len(parts) >= 3:
