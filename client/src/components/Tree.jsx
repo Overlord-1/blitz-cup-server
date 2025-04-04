@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Round from './Round';
+import BlitzAnimation from './BlitzAnimation';
 import { backendURL } from '../config/backendURL';
 
 const TournamentBracket = () => {
@@ -88,7 +89,7 @@ const TournamentBracket = () => {
   if (!participants) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4">
-        <h2 className="text-2xl font-bold text-white mb-6">Initialize Tournament</h2>
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-amber-400 bg-clip-text text-transparent mb-6">Initialize Tournament</h2>
         {error && (
           <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-2 rounded-lg mb-4">
             {error}
@@ -96,25 +97,7 @@ const TournamentBracket = () => {
         )}
         
         {isAnimating ? (
-          <div className="blitz-animation-container relative w-64 h-64">
-            <div className="lightning absolute inset-0 flex items-center justify-center">
-              <svg className="w-32 h-32" viewBox="0 0 24 24">
-                <path 
-                  className="animate-bolt fill-yellow-400"
-                  d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12L11 3h1l-1 7h3.5c.49 0 .56.33.47.51l-4 10.49z"
-                />
-              </svg>
-            </div>
-            <div className="circles">
-              {[...Array(3)].map((_, i) => (
-                <div 
-                  key={i}
-                  className={`absolute inset-0 border-4 border-blue-500 rounded-full
-                    animate-ripple-${i + 1} opacity-0`}
-                />
-              ))}
-            </div>
-          </div>
+          <BlitzAnimation />
         ) : (
           <button
             onClick={initializeTournament}
