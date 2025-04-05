@@ -1,5 +1,20 @@
 import { supabase } from "../config/connectDB.js";
 
+export const getTournamentStatus = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('tournament_status')
+      .select('status')
+      .eq('id', 1)
+
+    if (error) throw error;
+    res.status(200).json({ status: data.status });
+  } catch (error) {
+    console.error('Error fetching tournament status:', error);
+    res.status(500).json({ error: 'Failed to fetch tournament status' });
+  }
+};
+
 export const startgame = async (req, res) => {
   try {
     const { round } = req.body;
@@ -7,6 +22,14 @@ export const startgame = async (req, res) => {
     if (!round || typeof round !== "number" || round < 1) {
       return res.status(400).json({ error: "Invalid round parameter" });
     }
+
+    // Set tournament status to true
+    const { error: statusError } = await supabase
+      .from('tournament_status')
+      .update({ status: true })
+      .eq('id', 1);
+
+    if (statusError) throw statusError;
 
     // First, insert the tournament structure
     const { error: structureError } = await supabase.rpc('initialize_tournament_structure');
@@ -44,7 +67,7 @@ export const startgame = async (req, res) => {
     // Get round 1 matches
     const { data: roundMatches, error: matchError } = await supabase
       .from("matches")
-      .select("*")  // Changed from just "id" to "*"
+      .select("*")
       .eq("level", 1)
       .order('match_number', { ascending: true });
 
@@ -54,7 +77,7 @@ export const startgame = async (req, res) => {
     }
 
     // Update matches with players and questions
-    const updates = roundMatches.slice(0, 16).map((match, i) => ({  // Limit to first 16 matches
+    const updates = roundMatches.slice(0, 16).map((match, i) => ({
       id: match.id,
       p1: shuffledUsers[i * 2]?.id,
       p2: shuffledUsers[i * 2 + 1]?.id,
@@ -96,7 +119,6 @@ export const startgame = async (req, res) => {
   }
 };
 
-
 export const getMatches = async (req, res) => {
   try {
     const { data: matches, error } = await supabase
@@ -107,7 +129,6 @@ export const getMatches = async (req, res) => {
 
     if (error) throw error;
 
-    // Return array directly instead of converting to object
     res.status(200).json(matches);
   } catch (error) {
     console.error('Error fetching matches:', error.message);
@@ -133,6 +154,14 @@ export const getParticipants = async (req, res) => {
 
 export const reset = async (req, res) => {
   try {
+    // Set tournament status to false
+    const { error: statusError } = await supabase
+      .from('tournament_status')
+      .update({ status: false })
+      .eq('id', 1);
+
+    if (statusError) throw statusError;
+
     // Delete all matches
     const { error: matchError } = await supabase
       .from('matches')
@@ -162,4 +191,4 @@ export const reset = async (req, res) => {
     console.error('Error resetting game:', error);
     res.status(500).json({ error: 'Failed to reset game' });
   }
-}
+};
