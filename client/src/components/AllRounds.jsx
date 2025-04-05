@@ -145,7 +145,7 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
                             {/* Match number */}
                             <div className="absolute -top-3 right-3 px-2 py-0.5 bg-[#121212] rounded-md border border-[#1C1C1C] group-hover:border-[#3ECF8E]/20 transition-colors duration-300">
                                 <span className="text-xs text-[#6B7280] group-hover:text-[#E5E7EB]">
-                                    Match {currentMatchIndex}
+                                    Match {currentMatchIndex - (2*size)+1}
                                 </span>
                             </div>
                         </div>
