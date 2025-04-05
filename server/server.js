@@ -5,6 +5,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import questionRoutes from './routes/questionRoutes.js';
 import roundRouter from './routes/roundRoutes.js';
+import { startPolling } from './controllers/pollingService.js';
 
 dotenv.config();
 
@@ -32,4 +33,5 @@ app.use('/', (req, res) => {
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
+    startPolling();
 });

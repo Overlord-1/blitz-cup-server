@@ -93,6 +93,9 @@ export const startgame = async (req, res) => {
       return res.status(400).json({ error: "Invalid round parameter" });
     }
 
+    // Map round to level (1-5)
+    const currentLevel = Math.min(round, 5);
+
     // Set tournament status to true
     const { error: statusError } = await supabase
       .from('tournament_status')
@@ -120,30 +123,31 @@ export const startgame = async (req, res) => {
       return res.status(404).json({ error: "Not enough users found for this round" });
     }
 
-    // Get unused questions
+    // Get unused questions for current level
     const { data: questions, error: questionError } = await supabase
       .from("problemset")
       .select("*")
       .eq("used", false)
+      .eq("band", currentLevel)  // Match band with current level
       .limit(16);
 
     if (questionError) throw questionError;
     if (!questions?.length || questions.length < 16) {
-      return res.status(404).json({ error: "Not enough unused questions available" });
+      return res.status(404).json({ error: `Not enough unused questions available for level ${currentLevel}` });
     }
 
     const shuffledUsers = users.sort(() => Math.random() - 0.5);
     
-    // Get round 1 matches
+    // Get matches for current level
     const { data: roundMatches, error: matchError } = await supabase
       .from("matches")
       .select("*")
-      .eq("level", 1)
+      .eq("level", currentLevel)  // Use current level instead of hardcoded 1
       .order('match_number', { ascending: true });
 
     if (matchError) throw matchError;
     if (!roundMatches?.length) {
-      throw new Error("No matches found for round 1");
+      throw new Error(`No matches found for level ${currentLevel}`);
     }
 
     // Update matches with players and questions
