@@ -1,8 +1,9 @@
 import express from 'express';
-import { startTrackingMatch } from '../controllers/roundController.js'
+import { startTrackingMatch,getProblemLink } from '../controllers/roundController.js'
 
 const roundRouter = express.Router();
 
 roundRouter.post('/start-game', startTrackingMatch);
+roundRouter.post('/get-question',getProblemLink)
 
 export default roundRouter;

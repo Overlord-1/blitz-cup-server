@@ -2,16 +2,13 @@ import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import dotenv from 'dotenv';
 
-// Initialize environment variables
 dotenv.config();
 
-// Initialize Supabase client using environment variables
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 );
 
-// Controller to start tracking a Blitz tournament match
 export const startTrackingMatch = async (req, res) => {
   try {
     const { matchId } = req.body;
@@ -20,7 +17,6 @@ export const startTrackingMatch = async (req, res) => {
       return res.status(400).json({ error: 'Match ID is required' });
     }
     
-    // 1. Query the match table to get player IDs and problem
     const { data: match, error: matchError } = await supabase
       .from('matches')
       .select('id, p1, p2, cf_question')
@@ -31,7 +27,6 @@ export const startTrackingMatch = async (req, res) => {
       return res.status(404).json({ error: 'Match not found' });
     }
     
-    // 2. Query the users table to get handles
     const { data: player1, error: p1Error } = await supabase
       .from('users')
       .select('cf_handle')
@@ -48,7 +43,6 @@ export const startTrackingMatch = async (req, res) => {
       return res.status(404).json({ error: 'One or both players not found' });
     }
     
-    // 3. Query the problemset table to get the question_id
     const { data: problem, error: problemError } = await supabase
       .from('problemset')
       .select('question_id')
@@ -59,7 +53,6 @@ export const startTrackingMatch = async (req, res) => {
       return res.status(404).json({ error: 'Problem not found' });
     }
     
-    // 4. Format the problem_id (add slash before the letter)
     let formattedProblemId = problem.question_id;
     const letterIndex = problem.question_id.search(/[A-Za-z]/);
     
@@ -76,7 +69,6 @@ export const startTrackingMatch = async (req, res) => {
         match_id: matchId
     });
     
-    // 5. Call the worker to start tracking
     const workerResponse = await axios.post(`${process.env.WORKER_URL}/start_tracking`, {
       handle1: player1.cf_handle,
       handle2: player2.cf_handle,
@@ -91,6 +83,72 @@ export const startTrackingMatch = async (req, res) => {
     
   } catch (error) {
     console.error('Error starting tracking:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getProblemLink = async (req, res) => {
+  try {
+    const { matchId } = req.body;
+    console.log(matchId);
+    
+    
+    if (!matchId) {
+      return res.status(400).json({ error: 'Match ID is required' });
+    }
+    
+    // Get match details
+    const { data: match, error: matchError } = await supabase
+      .from('matches')
+      .select('id, cf_question')
+      .eq('id', matchId)
+      .single();
+    
+    if (matchError || !match) {
+      return res.status(404).json({ error: 'Match not found' });
+    }
+    
+    // Check if cf_question is NULL
+    if (!match.cf_question) {
+      return res.status(200).json({ 
+        message: 'Match not started',
+        problemLink: null
+      });
+    }
+    
+    // Get problem details
+    const { data: problem, error: problemError } = await supabase
+      .from('problemset')
+      .select('question_id')
+      .eq('id', match.cf_question)
+      .single();
+    
+    if (problemError || !problem) {
+      return res.status(404).json({ error: 'Problem not found' });
+    }
+    
+    // Format problem ID for the URL
+    let formattedProblemId = problem.question_id;
+    const letterIndex = problem.question_id.search(/[A-Za-z]/);
+    
+    // Create the problem link following Codeforces format
+    let problemLink;
+    if (letterIndex !== -1) {
+      const contestNumber = problem.question_id.substring(0, letterIndex);
+      const problemLetter = problem.question_id.substring(letterIndex);
+      problemLink = `https://codeforces.com/problemset/problem/${contestNumber}/${problemLetter}`;
+    } else {
+      // Handle case where question_id doesn't have the expected format
+      problemLink = `https://codeforces.com/problemset/problem/${problem.question_id}`;
+    }
+    
+    return res.status(200).json({ 
+      message: 'Problem link retrieved successfully',
+      problemLink
+    });
+    
+  } catch (error) {
+    console.error('Error getting problem link:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
