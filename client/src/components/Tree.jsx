@@ -30,7 +30,7 @@ const Tree = () => {
     const fetchTournamentData = async () => {
         try {
             // Get matches data
-            const matchesResponse = await axios.get(`${backendURL}/game/get-matches`);
+            const matchesResponse = await axios.get(`${backendURL}/game/get-matches1`);
             const matchesData = matchesResponse.data;
             setMatches(matchesData);
     
@@ -46,6 +46,7 @@ const Tree = () => {
                     if (player1 && player2) orderedParticipants.push(player1,player2);
                 }
             });
+            console.log(orderedParticipants)
             if (orderedParticipants.length !== 32) {
                 throw new Error('Need exactly 32 participants to start the tournament');
             }

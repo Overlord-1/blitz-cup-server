@@ -213,6 +213,24 @@ export const getMatches = async (req, res) => {
   }
 };
 
+export const getMatchesFirst = async (req, res) => {
+  try {
+    const { data: matches, error } = await supabase
+      .from('matches')
+      .select('*')
+      .neq('match_number', -1)
+      .eq('level', 1) // Get only the first level matches
+      .order('match_number', { ascending: true });
+
+    if (error) throw error;
+
+    res.status(200).json(matches);
+  } catch (error) {
+    console.error('Error fetching matches:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const getParticipants = async (req, res) => {
   try {
     const { data: users, error } = await supabase

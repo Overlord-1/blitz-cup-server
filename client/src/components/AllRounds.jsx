@@ -42,7 +42,7 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
 
     return (
         <div className="flex flex-col-reverse justify-center round max-w-full">
-            <div className={`gap-4 space-y-${level === 1 ? '8' : level === 2 ? '12' : '16'}`}>
+            <div className={`gap-6 space-y-${level === 1 ? '12' : level === 2 ? '16' : '20'}`}>
                 {Array.from({ length: size }, (_, i) => {
                     const currentMatchIndex = startIndex - i;
                     const matchData = findPlayersForMatch(currentMatchIndex, matches);
@@ -52,37 +52,22 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
                     return (
                         <div 
                             key={`${desc}-${currentMatchIndex}`} 
-                            className="flex flex-row-reverse relative w-[280px] bg-[#121212] rounded-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-[#3ECF8E]/5"
+                            className="flex flex-row-reverse relative mt-8 w-[380px] bg-[#121212] rounded-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-[#3ECF8E]/20"
                         >
                             {/* Highlight border */}
                             <div className="absolute inset-0 border border-[#1C1C1C] rounded-lg transition-colors duration-300 group-hover:border-[#3ECF8E]/20" />
                             
                             {/* Player 1 */}
-                            <div className={`
-                                relative p-4 transition-all duration-200
-                                ${isPlayer1Winner 
-                                    ? 'bg-[#3ECF8E]/[0.02]' 
-                                    : 'hover:bg-[#3ECF8E]/[0.01]'}
-                            `}>
+                            <div className={`relative p-4 transition-all duration-200 ${isPlayer1Winner ? 'bg-[#3ECF8E]/[0.1]' : matchData.winner ? 'bg-[#FF0000]/[0.1]' : 'bg-[#6B7280]/[0.1] hover:bg-[#6B7280]/[0.2]'}`}>
                                 <div className="flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-2.5 min-w-0">
                                         <div className="relative">
-                                            <div className={`
-                                                h-1.5 w-1.5 rounded-full shrink-0 transition-all duration-300
-                                                ${isPlayer1Winner 
-                                                    ? 'bg-[#3ECF8E] scale-110' 
-                                                    : 'bg-[#6B7280] group-hover:bg-[#3ECF8E]/20'}
-                                            `} />
+                                            <div className={`h-1.5 w-1.5 rounded-full shrink-0 transition-all duration-300 ${isPlayer1Winner ? 'bg-[#3ECF8E] scale-110' : matchData.winner ? 'bg-[#FF0000]/40' : 'bg-[#6B7280] group-hover:bg-[#6B7280]/80'}`} />
                                             {isPlayer1Winner && (
                                                 <div className="absolute inset-0 animate-ping rounded-full bg-[#3ECF8E]/30" />
                                             )}
                                         </div>
-                                        <span className={`
-                                            text-sm font-medium truncate max-w-[180px]
-                                            ${isPlayer1Winner 
-                                                ? 'text-[#3ECF8E]' 
-                                                : 'text-[#E5E7EB] group-hover:text-white'}
-                                        `}>
+                                        <span className={`text-sm font-medium truncate max-w-[180px] ${isPlayer1Winner ? 'text-[#3ECF8E]' : matchData.winner ? 'text-[#FF0000]/80' : 'text-[#E5E7EB] group-hover:text-white'}`}>
                                             {matchData.p1 || 'TBD'}
                                         </span>
                                     </div>
@@ -98,35 +83,22 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
                                 </div>
                             </div>
 
-                            {/* Separator */}
-                            <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[#1C1C1C] to-transparent group-hover:via-[#3ECF8E]/10 transition-colors duration-300" />
+                            {/* Separator with "V/S" */}
+                            <div className="flex items-center justify-center w-full text-[#6B7280] font-medium text-sm">
+                                V/S
+                            </div>
 
                             {/* Player 2 */}
-                            <div className={`
-                                relative p-4 transition-all duration-200
-                                ${isPlayer2Winner 
-                                    ? 'bg-[#3ECF8E]/[0.02]' 
-                                    : 'hover:bg-[#3ECF8E]/[0.01]'}
-                            `}>
+                            <div className={`relative p-4 transition-all duration-200 ${isPlayer2Winner ? 'bg-[#3ECF8E]/[0.1]' : matchData.winner ? 'bg-[#FF0000]/[0.1]' : 'bg-[#6B7280]/[0.1] hover:bg-[#6B7280]/[0.2]'}`}>
                                 <div className="flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-2.5 min-w-0">
                                         <div className="relative">
-                                            <div className={`
-                                                h-1.5 w-1.5 rounded-full shrink-0 transition-all duration-300
-                                                ${isPlayer2Winner 
-                                                    ? 'bg-[#3ECF8E] scale-110' 
-                                                    : 'bg-[#6B7280] group-hover:bg-[#3ECF8E]/20'}
-                                            `} />
+                                            <div className={`h-1.5 w-1.5 rounded-full shrink-0 transition-all duration-300 ${isPlayer2Winner ? 'bg-[#3ECF8E] scale-110' : matchData.winner ? 'bg-[#FF0000]/40' : 'bg-[#6B7280] group-hover:bg-[#6B7280]/80'}`} />
                                             {isPlayer2Winner && (
                                                 <div className="absolute inset-0 animate-ping rounded-full bg-[#3ECF8E]/30" />
                                             )}
                                         </div>
-                                        <span className={`
-                                            text-sm font-medium truncate max-w-[180px]
-                                            ${isPlayer2Winner 
-                                                ? 'text-[#3ECF8E]' 
-                                                : 'text-[#E5E7EB] group-hover:text-white'}
-                                        `}>
+                                        <span className={`text-sm font-medium truncate max-w-[180px] ${isPlayer2Winner ? 'text-[#3ECF8E]' : matchData.winner ? 'text-[#FF0000]/80' : 'text-[#E5E7EB] group-hover:text-white'}`}>
                                             {matchData.p2 || 'TBD'}
                                         </span>
                                     </div>
@@ -152,7 +124,7 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
                     );
                 })}
             </div>
-            <h3 className="text-sm font-medium text-[#6B7280] text-center mb-6 uppercase tracking-wider">{desc}</h3>
+            <h3 className="text-sm font-medium text-[#6B7280] text-center mb-2 uppercase tracking-wider">{desc}</h3>
         </div>
     );
 };
