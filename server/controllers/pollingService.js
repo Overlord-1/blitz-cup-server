@@ -27,7 +27,19 @@ async function updateMatchWinner(matchId, winnerHandle) {
             return;
         }
 
-        // Update the matches table with the winner's ID
+        // Get the current match details
+        const { data: matchData, error: matchError } = await supabase
+            .from('matches')
+            .select('match_number')
+            .eq('id', matchId)
+            .single();
+
+        if (matchError) {
+            console.error('Error fetching match:', matchError);
+            return;
+        }
+
+        // Update the current match with the winner
         const { error: updateError } = await supabase
             .from('matches')
             .update({ winner: userData.id })
@@ -38,7 +50,39 @@ async function updateMatchWinner(matchId, winnerHandle) {
             return;
         }
 
+        // Calculate next match number (integer division by 2)
+        const nextMatchNumber = Math.floor(matchData.match_number / 2);
+
+        // Get the next match details to check player slots
+        const { data: nextMatchData, error: nextMatchCheckError } = await supabase
+            .from('matches')
+            .select('p1, p2')
+            .eq('match_number', nextMatchNumber)
+            .single();
+
+        if (nextMatchCheckError) {
+            console.error('Error checking next match:', nextMatchCheckError);
+            return;
+        }
+
+        // Determine which player slot to update
+        const updateField = !nextMatchData.p1 ? 'p1' : 'p2';
+
+        // Update the next match with the winner as a player
+        const { error: nextMatchError } = await supabase
+            .from('matches')
+            .update({ 
+                [updateField]: userData.id 
+            })
+            .eq('match_number', nextMatchNumber);
+
+        if (nextMatchError) {
+            console.error('Error updating next match:', nextMatchError);
+            return;
+        }
+
         console.log(`Updated winner for match ${matchId}: ${winnerHandle}`);
+        console.log(`Updated next match ${nextMatchNumber} with winner as ${updateField}`);
     } catch (error) {
         console.error('Error in updateMatchWinner:', error);
     }
