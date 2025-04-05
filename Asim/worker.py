@@ -237,6 +237,14 @@ def check_status(tracking_id):
             "status": "error",
             "message": f"An error occurred while checking status: {str(e)}"
         }), 500
+    
+
+@app.route('/', methods=['GET'])
+def health_check():
+    return jsonify({
+        "status":"alive"
+    })
+    
 
 @app.route('/stop_tracking', methods=['POST'])
 def stop_tracking():
