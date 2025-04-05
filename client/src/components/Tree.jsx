@@ -83,7 +83,7 @@ const TournamentBracket = () => {
     let pollInterval;
     
     if (tournamentStatus && participants) {
-      pollInterval = setInterval(fetchMatches, 1000); // Poll every minute
+      pollInterval = setInterval(fetchMatches, 100000); // Poll every minute
     }
 
     return () => {

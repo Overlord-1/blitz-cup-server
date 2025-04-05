@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import gameRoutes from './routes/gameRoutes.js';
 import cors from 'cors';
 import morgan from 'morgan';
-import { verifySubmissions } from './controllers/verifyController.js';
+import questionRoutes from './routes/questionRoutes.js';
 
 
 dotenv.config();
@@ -16,7 +16,7 @@ app.use(morgan('dev'));
 app.use(cors());
 
 // Routes
-app.use('/verify',verifySubmissions);
+app.use('/question',questionRoutes);
 app.use('/game', gameRoutes);
 
 // Global error handler
