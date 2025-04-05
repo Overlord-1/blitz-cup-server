@@ -19,6 +19,7 @@ const TournamentBracket = () => {
       const matchesResponse = await axios.get(`${backendURL}/game/get-matches`);
       const newMatches = matchesResponse.data;
       setMatches(newMatches);
+      // console.log(matches)
     } catch (err) {
       console.error('Error fetching matches:', err);
     }
@@ -41,11 +42,11 @@ const TournamentBracket = () => {
         if (match.p1 && match.p2) {
           const player1 = users.find(u => u.id === match.p1);
           const player2 = users.find(u => u.id === match.p2);
-          if (player1) orderedParticipants.push(player1);
-          if (player2) orderedParticipants.push(player2);
+          if (player1 && player2) orderedParticipants.push(player1,player2);
+          // if (player2) orderedParticipants.push(player2);
         }
       });
-  
+      // console.log(orderedParticipants)
       if (orderedParticipants.length !== 32) {
         throw new Error('Need exactly 32 participants to start the tournament');
       }
@@ -63,7 +64,6 @@ const TournamentBracket = () => {
         const response = await axios.get(`${backendURL}/game/get-tournament-status`);
         const { status } = response.data;
         setTournamentStatus(status);
-        
         if (status) {
           await fetchTournamentData();
         }
@@ -83,7 +83,7 @@ const TournamentBracket = () => {
     let pollInterval;
     
     if (tournamentStatus && participants) {
-      pollInterval = setInterval(fetchMatches, 1000); // Poll every minute
+      pollInterval = setInterval(fetchMatches, 5000); // Poll every minute
     }
 
     return () => {
@@ -189,22 +189,31 @@ const TournamentBracket = () => {
           <AllRounds 
             size={4} 
             desc='R16' 
-            matches={matches.filter(m => m.level === 2).slice(0, 4)}
+            matches={matches}
+            level={2}
+            participants={participants}
+            startIndex={15}
           />
           <AllRounds 
             size={2} 
             desc='QF' 
-            matches={matches.filter(m => m.level === 3).slice(0, 2)}
+            matches={matches}
+            level={3}
+            participants={participants}
+            startIndex={7}
           />
           <AllRounds 
             size={1} 
             desc='SF' 
-            matches={matches.filter(m => m.level === 4).slice(0, 1)}
+            matches={matches}
+            level={4}
+            participants={participants}
+            startIndex={3}
           />
         </div>
 
         {/* Finals section */}
-        <div className="finals-column mx-8 self-center -mt-4">
+        <div className="finals-column mx-8 self-center -mt-18">
           <h3 className="text-white text-center font-semibold mb-2">Finals</h3>
           <div className="match-box w-40 bg-gradient-to-r from-yellow-900/30 to-yellow-800/30 p-2 rounded-lg border border-yellow-700">
             <div className="player p-2 border-l-4 border-yellow-500 bg-yellow-900/30 rounded mb-1">
@@ -227,17 +236,26 @@ const TournamentBracket = () => {
           <AllRounds 
             size={1} 
             desc='SF'
-            matches={matches.filter(m => m.level === 4).slice(1, 2)}
+            matches={matches}
+            level={4}
+            participants={participants}
+            startIndex={2}
           />
           <AllRounds 
             size={2} 
             desc='QF'
-            matches={matches.filter(m => m.level === 3).slice(2, 4)}
+            matches={matches}
+            level={3}
+            participants={participants}
+            startIndex={5}   
           />
           <AllRounds 
             size={4} 
             desc='R16'
-            matches={matches.filter(m => m.level === 2).slice(4, 8)}
+            matches={matches}
+            level={2}
+            participants={participants}
+            startIndex={11}
           />
           <Round 
             size={8} 
