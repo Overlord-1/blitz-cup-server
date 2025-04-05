@@ -26,6 +26,10 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Something broke!' });
 });
 
+app.use('/', (req, res) => {
+    res.send('<h1>Hello World!</h1>');
+});
+
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
