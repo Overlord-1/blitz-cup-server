@@ -1,6 +1,22 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }) => {
+    const container = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1,
+                delayChildren: level * 0.2
+            }
+        }
+    };
+
+    const item = {
+        hidden: { opacity: 0, x: level % 2 === 0 ? -20 : 20 },
+        show: { opacity: 1, x: 0 }
+    };
     const findPlayersForMatch = (matchIndex, allMatches) => {
         const currentLevelMatches = allMatches.filter(m => m.level === level);
         const currentMatch = currentLevelMatches.find(m => m.match_number === matchIndex);
@@ -42,7 +58,12 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
 
     return (
         <div className="flex flex-col-reverse justify-center round max-w-full">
-            <div className={`gap-6 space-y-${level === 1 ? '12' : level === 2 ? '16' : '20'}`}>
+            <motion.div 
+                variants={container}
+                initial="hidden"
+                animate="show"
+                className={`gap-6 space-y-${level === 1 ? '12' : level === 2 ? '16' : '20'}`}
+            >
                 {Array.from({ length: size }, (_, i) => {
                     const currentMatchIndex = startIndex - i;
                     const matchData = findPlayersForMatch(currentMatchIndex, matches);
@@ -50,6 +71,13 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
                     const isPlayer2Winner = matchData.winner === matchData.p2;
 
                     return (
+                        <motion.div 
+                            key={`${desc}-${currentMatchIndex}`}
+                            variants={item}
+                            whileHover={{ scale: 1.02 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                            className="flex flex-row-reverse relative mt-8 w-[380px] bg-[#121212] rounded-lg overflow-hidden"
+                        >
                         <div 
                             key={`${desc}-${currentMatchIndex}`} 
                             className="flex flex-row-reverse relative mt-8 w-[380px] bg-[#121212] rounded-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-[#3ECF8E]/20"
@@ -121,11 +149,20 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
                                 </span>
                             </div>
                         </div>
+                        </motion.div>
                     );
                 })}
+            </motion.div>
+            <motion.h3 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: level * 0.2 }}
+                className="text-sm font-medium text-[#6B7280] text-center mb-2 uppercase tracking-wider italic"
+            >
+                {desc}
+            </motion.h3>
             </div>
-            <h3 className="text-sm font-medium text-[#6B7280] text-center mb-2 uppercase tracking-wider">{desc}</h3>
-        </div>
+            // <h3 className="text-sm font-medium text-[#6B7280] text-center mb-2 uppercase tracking-wider italic">{desc}</h3>
     );
 };
 

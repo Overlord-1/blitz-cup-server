@@ -1,5 +1,6 @@
 import React from 'react';
 import AllRounds from './AllRounds';
+import { motion } from 'framer-motion';
 
 const BracketDisplay = ({ matches, participants }) => {
     // Calculate dimensions based on tournament structure
@@ -9,10 +10,21 @@ const BracketDisplay = ({ matches, participants }) => {
     const bracketHeight = matchHeight * 11; // Height to accommodate 8 first-round matches
 
     return (
-        <div className="w-full pb-8 overflow-x-auto">
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="w-full pb-8 overflow-x-auto overflow-y-hidden"
+        >
+            <motion.div 
+                initial={{ scale: 0.95 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="relative" 
+                style={{ width: bracketWidth, height: bracketHeight }}
+            >
+        <div className="w-full pb-8 overflow-x-auto ">
             <div className="relative" style={{ width: bracketWidth, height: bracketHeight }}>
-                {/* Tournament Brackets - Using absolute positioning */}
-                {/* <div className="absolute grid grid-cols-9 w-full h-full"> */}
                 <div className="flex flex-row gap-4 w-full h-full">
                     {/* Left Bracket */}
                     <div className="flex flex-col justify-around">
@@ -112,6 +124,8 @@ const BracketDisplay = ({ matches, participants }) => {
                 </div>
             </div>
         </div>
+        </motion.div>
+    </motion.div>
     );
 };
 

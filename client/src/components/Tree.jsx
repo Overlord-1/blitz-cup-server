@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import Round from './Round';
-import AllRounds from './AllRounds';
 import BlitzAnimation from './BlitzAnimation';
 import BracketDisplay from './BracketDisplay';
 import { backendURL } from '../config/backendURL';
+import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 
 const Tree = () => {
     const [participants, setParticipants] = useState([]);
@@ -13,6 +13,9 @@ const Tree = () => {
     const [error, setError] = useState(null);
     const [isAnimating, setIsAnimating] = useState(false);
     const [tournamentStatus, setTournamentStatus] = useState(false);
+    const [winners, setWinners] = useState(new Set());
+    const [showWinnerAnimation, setShowWinnerAnimation] = useState(false);
+    const [currentWinner, setCurrentWinner] = useState(null);
 
     // Add fetchMatches function to get updated match data
     const fetchMatches = useCallback(async () => {
@@ -60,6 +63,65 @@ const Tree = () => {
     };
 
     useEffect(() => {
+        const checkForNewWinners = () => {
+            matches.forEach(match => {
+                // Skip if no winner or already processed
+                if (!match.winner || winners.has(match.winner)) {
+                    return;
+                }
+    
+                const winningPlayer = participants.find(p => p.id === match.winner);
+                if (winningPlayer) {
+                    // Update winners set
+                    setWinners(prevWinners => new Set([...prevWinners, match.winner]));
+                    setCurrentWinner(winningPlayer);
+                    
+                    // Trigger confetti
+                    const triggerConfetti = () => {
+                        const defaults = { 
+                            startVelocity: 30, 
+                            spread: 360, 
+                            ticks: 60, 
+                            zIndex: 100,
+                            particleCount: 100,
+                            origin: { y: 0.6 }
+                        };
+    
+                        confetti({
+                            ...defaults,
+                            angle: 60,
+                            origin: { x: 0, y: 0.8 }
+                        });
+    
+                        confetti({
+                            ...defaults,
+                            angle: 120,
+                            origin: { x: 1, y: 0.8 }
+                        });
+                    };
+    
+                    // Trigger multiple bursts
+                    triggerConfetti();
+                    setTimeout(triggerConfetti, 250);
+                    setTimeout(triggerConfetti, 500);
+    
+                    // Show winner animation
+                    setShowWinnerAnimation(true);
+    
+                    // Reset animation after delay
+                    setTimeout(() => {
+                        setShowWinnerAnimation(false);
+                    }, 3000);
+                }
+            });
+        };
+    
+        if (matches.length > 0 && participants.length > 0) {
+            checkForNewWinners();
+        }
+    }, [matches, participants]); // Remove winners from dependencies to prevent loops
+
+    useEffect(() => {
         const checkTournamentStatus = async () => {
             try {
                 const response = await axios.get(`${backendURL}/game/get-tournament-status`);
@@ -82,7 +144,6 @@ const Tree = () => {
     // Add polling effect
     useEffect(() => {
         let pollInterval;
-        
         if (tournamentStatus && participants) {
             pollInterval = setInterval(fetchMatches, 5000); // Poll every minute
         }
@@ -191,6 +252,7 @@ const Tree = () => {
     }
 
     return (
+        <>
         <div className="relative animate-fadeIn">
             <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#0A0A0A] to-transparent pointer-events-none z-10"></div>
             <div className="relative overflow-x-auto overflow-y-hidden">
@@ -198,7 +260,28 @@ const Tree = () => {
             </div>
             <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A0A0A] to-transparent pointer-events-none z-10"></div>
         </div>
-    );
+        {showWinnerAnimation && currentWinner && (
+            <AnimatePresence>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+                >
+                    <motion.div 
+                        className="bg-[#3ECF8E]/10 backdrop-blur-sm rounded-xl p-8 border border-[#3ECF8E]/20"
+                        initial={{ y: 50 }}
+                        animate={{ y: 0 }}
+                        transition={{ type: "spring", bounce: 0.4 }}
+                    >
+                        <h2 className="text-2xl font-bold text-[#3ECF8E] text-center">
+                            {currentWinner.name} Wins!
+                        </h2>
+                    </motion.div>
+                </motion.div>
+            </AnimatePresence>
+        )}
+    </>);
 };
 
 export default Tree;
