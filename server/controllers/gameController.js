@@ -6,6 +6,7 @@ export const getTournamentStatus = async (req, res) => {
       .from('tournament_status')
       .select('status')
       .eq('id', 1)
+      .single()
 
     if (error) throw error;
     res.status(200).json({ status: data.status });

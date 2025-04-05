@@ -6,7 +6,7 @@ import BlitzAnimation from './BlitzAnimation';
 import { backendURL } from '../config/backendURL';
 
 const TournamentBracket = () => {
-  const [participants, setParticipants] = useState(null);
+  const [participants, setParticipants] = useState([]);
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -43,15 +43,14 @@ const TournamentBracket = () => {
           const player1 = users.find(u => u.id === match.p1);
           const player2 = users.find(u => u.id === match.p2);
           if (player1 && player2) orderedParticipants.push(player1,player2);
-          // if (player2) orderedParticipants.push(player2);
         }
       });
-      // console.log(orderedParticipants)
       if (orderedParticipants.length !== 32) {
         throw new Error('Need exactly 32 participants to start the tournament');
       }
-  
       setParticipants(orderedParticipants);
+      console.log(orderedParticipants)
+      // console.log(participants)
     } catch (err) {
       setError(err.message || 'Failed to fetch tournament data');
       console.error('Tournament data fetch error:', err);
@@ -118,7 +117,7 @@ const TournamentBracket = () => {
       setLoading(true);
       setParticipants(null);
       setMatches([]);
-      await axios.get(`${backendURL}/game/reset-game`);
+      await axios.get(`${backendURL}/game/reset`);
       setTournamentStatus(false);
     } catch (err) {
       setError(err.message || 'Failed to reset tournament');

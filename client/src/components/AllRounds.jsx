@@ -51,7 +51,7 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
             {Array.from({ length: size }, (_, i) => {
                 // Calculate match number for this position
                 const currentMatchIndex = startIndex - i;
-                console.log(`Level ${level}, Index ${currentMatchIndex}`); // Debug log
+                // console.log(`Level ${level}, Index ${currentMatchIndex}`); // Debug log
                 
                 const matchData = findPlayersForMatch(currentMatchIndex, matches);
                 
