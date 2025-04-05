@@ -16,13 +16,13 @@ function App() {
                 <div className="relative z-10">
                     <Layout>
                         <Routes>
-                            <Route path="/" element={<Tree />} />
+                            <Route path="/" element={<GetProblemLink />} />
                             <Route
                                 path="/match-details"
                                 element={
                                     <div className="p-4">
                                         <div className="bg-transparentrounded-lg shadow-lg p-6">
-                                            <GetProblemLink />
+                                            <Tree />
                                         </div>
                                     </div>
                                 }
