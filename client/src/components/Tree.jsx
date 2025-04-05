@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Round from './Round';
 import BlitzAnimation from './BlitzAnimation';
@@ -6,15 +6,30 @@ import { backendURL } from '../config/backendURL';
 
 const TournamentBracket = () => {
   const [participants, setParticipants] = useState(null);
+  const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
 
+  // Add fetchMatches function to get updated match data
+  const fetchMatches = useCallback(async () => {
+    try {
+      const matchesResponse = await axios.get(`${backendURL}/game/get-matches`);
+      setMatches(matchesResponse.data);
+      console.log(matches)
+    } catch (err) {
+      console.error('Error fetching matches:', err);
+    }
+  }, []);
+
+  // Modified fetchTournamentData to include matches
   const fetchTournamentData = async () => {
     try {
       // Get matches data
       const matchesResponse = await axios.get(`${backendURL}/game/get-matches`);
-      const matchesData = matchesResponse.data;  // Now it's already an array and sorted
+      const matchesData = matchesResponse.data;
+      setMatches(matchesData);
+      console.log(matches)
   
       // Get participants data
       const participantsResponse = await axios.get(`${backendURL}/game/get-participants`);
@@ -22,7 +37,7 @@ const TournamentBracket = () => {
   
       const orderedParticipants = [];
       matchesData.forEach(match => {
-        if (match.p1 && match.p2) {  // Only add if players are assigned
+        if (match.p1 && match.p2) {
           const player1 = users.find(u => u.id === match.p1);
           const player2 = users.find(u => u.id === match.p2);
           if (player1) orderedParticipants.push(player1);
@@ -42,14 +57,32 @@ const TournamentBracket = () => {
     }
   };
 
+  // Add polling effect
+  useEffect(() => {
+    let pollInterval;
+    
+    if (participants) {
+      // Start polling when tournament is initialized
+      pollInterval = setInterval(fetchMatches, 1000); // Poll every minute
+    }
+
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
+  }, [participants, fetchMatches]);
+
+  // Initial load effect
   useEffect(() => {
     const isStarted = localStorage.getItem('gameStarted');
     const savedParticipants = localStorage.getItem('tournamentParticipants');
 
     if (isStarted && savedParticipants) {
       setParticipants(JSON.parse(savedParticipants));
+      fetchMatches(); // Fetch initial matches data
     }
-  }, []);
+  }, [fetchMatches]);
 
   const initializeTournament = async () => {
     setLoading(true);
@@ -96,7 +129,6 @@ const TournamentBracket = () => {
             {error}
           </div>
         )}
-        
         {isAnimating ? (
           <BlitzAnimation />
         ) : (
@@ -121,36 +153,47 @@ const TournamentBracket = () => {
 
   return (
     <div className="tournament-container min-h-screen bg-gray-900 p-4 overflow-x-auto rounded-lg">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-          Tournament Bracket
-        </h1>
-        <button
-          onClick={resetTournament}
-          disabled={loading}
-          className={`
-            px-4 py-2 rounded-lg font-semibold
-            ${loading 
-              ? 'bg-gray-600 cursor-not-allowed' 
-              : 'bg-red-600 hover:bg-red-700 cursor-pointer'
-            }
-            text-white transition-colors
-          `}
-        >
-          {loading ? 'Resetting...' : 'Reset Tournament'}
-        </button>
-      </div>
-      
+      {/* ... header section ... */}
+      <button
+            onClick={resetTournament}
+            className={`
+              px-6 py-3 rounded-lg font-semibold
+              ${loading 
+                ? 'bg-gray-600 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+              }
+              text-white transition-colors
+            `}
+          >
+          Reset Tournament
+          </button>
       <div className="bracket-wrapper flex items-center justify-center min-w-fit">
         {/* Left Bracket */}
         <div className="flex flex-row gap-2 left-bracket">
-          <Round size={8} desc='R32' players={participants.slice(0, 16)} />
-          <Round size={4} desc='R16' />
-          <Round size={2} desc='QF' />
-          <Round size={1} desc='SF' />
+          <Round 
+            size={8} 
+            desc='R32' 
+            players={participants.slice(0, 16)} 
+            matches={matches.filter(m => m.level === 1).slice(0, 8)}
+          />
+          <Round 
+            size={4} 
+            desc='R16' 
+            matches={matches.filter(m => m.level === 2).slice(0, 4)}
+          />
+          <Round 
+            size={2} 
+            desc='QF' 
+            matches={matches.filter(m => m.level === 3).slice(0, 2)}
+          />
+          <Round 
+            size={1} 
+            desc='SF' 
+            matches={matches.filter(m => m.level === 4).slice(0, 1)}
+          />
         </div>
 
-        {/* Finals */}
+        {/* Finals section */}
         <div className="finals-column mx-8 self-center -mt-4">
           <h3 className="text-white text-center font-semibold mb-2">Finals</h3>
           <div className="match-box w-40 bg-gradient-to-r from-yellow-900/30 to-yellow-800/30 p-2 rounded-lg border border-yellow-700">
@@ -171,10 +214,27 @@ const TournamentBracket = () => {
 
         {/* Right Bracket */}
         <div className="flex flex-row gap-2 right-bracket">
-          <Round size={1} desc='SF' />
-          <Round size={2} desc='QF' />
-          <Round size={4} desc='R16' />
-          <Round size={8} desc='R32' players={participants.slice(16, 32)} />
+          <Round 
+            size={1} 
+            desc='SF'
+            matches={matches.filter(m => m.level === 4).slice(1, 2)}
+          />
+          <Round 
+            size={2} 
+            desc='QF'
+            matches={matches.filter(m => m.level === 3).slice(2, 4)}
+          />
+          <Round 
+            size={4} 
+            desc='R16'
+            matches={matches.filter(m => m.level === 2).slice(4, 8)}
+          />
+          <Round 
+            size={8} 
+            desc='R32' 
+            players={participants.slice(16, 32)}
+            matches={matches.filter(m => m.level === 1).slice(8, 16)}
+          />
         </div>
       </div>
     </div>
