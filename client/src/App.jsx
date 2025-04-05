@@ -20,8 +20,8 @@ function App() {
                             <Route
                                 path="/match-details"
                                 element={
-                                    <div className="p-4">
-                                        <div className="bg-transparentrounded-lg shadow-lg p-6">
+                                    <div className="-mt-6">
+                                        <div className="bg-transparentrounded-lg shadow-sm">
                                             <Tree />
                                         </div>
                                     </div>
