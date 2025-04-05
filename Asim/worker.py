@@ -335,6 +335,31 @@ def all_tracking_history():
             "status": "error",
             "message": f"An error occurred while getting tracking history: {str(e)}"
         }), 500
+
+@app.route('/matches_completed', methods=['GET'])
+def matches_completed():
+    """
+    Returns an array of IDs for all completed matches.
+    A match is considered completed if it has a status of "both_solved" or "one_solved".
+    """
+    try:
+        completed_matches = []
         
+        for match_id, status in active_tracking.items():
+            # Check if the status is a dictionary and has a 'status' field
+            if isinstance(status, dict) and status.get("status") in ["both_solved", "one_solved"]:
+                completed_matches.append(match_id)
+        
+        return jsonify({
+            "status": "success",
+            "matches_completed": completed_matches
+        })
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
+            "status": "error",
+            "message": f"An error occurred while retrieving completed matches: {str(e)}"
+        }), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
