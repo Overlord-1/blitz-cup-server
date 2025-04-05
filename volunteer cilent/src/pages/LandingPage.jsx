@@ -76,7 +76,7 @@ const BlitzTournamentVolunteer = () => {
     setStatus({ message: 'Verifying match...', type: 'info' });
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/verify`, {
+      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/question/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -106,7 +106,7 @@ const BlitzTournamentVolunteer = () => {
     setStatus({ message: 'Changing question...', type: 'info' });
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/changequestion`, {
+      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/question/change`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ const BlitzTournamentVolunteer = () => {
     setStatus({ message: 'Starting match...', type: 'info' });
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/start-match`, {
+      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/round/start-game`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

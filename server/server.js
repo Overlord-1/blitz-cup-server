@@ -4,7 +4,7 @@ import gameRoutes from './routes/gameRoutes.js';
 import cors from 'cors';
 import morgan from 'morgan';
 import questionRoutes from './routes/questionRoutes.js';
-
+import roundRouter from './routes/roundRoutes.js';
 
 dotenv.config();
 
@@ -18,6 +18,7 @@ app.use(cors());
 // Routes
 app.use('/question',questionRoutes);
 app.use('/game', gameRoutes);
+app.use('/round',roundRouter);
 
 // Global error handler
 app.use((err, req, res, next) => {
