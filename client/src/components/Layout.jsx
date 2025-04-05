@@ -77,6 +77,6 @@ const Layout = ({ children }) => {
             </motion.main>
         </motion.div>
     );
-};
+};  
 
 export default Layout;

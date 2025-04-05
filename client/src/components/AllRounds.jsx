@@ -157,7 +157,7 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: level * 0.2 }}
-                className="text-sm font-medium text-[#6B7280] text-center mb-2 uppercase tracking-wider italic"
+                className="text-sm font-medium text-[#6B7280] text-center mb-2 uppercase tracking-wider italic after:content-[''] relative after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-[#6B7280] after:rounded-md"
             >
                 {desc}
             </motion.h3>
