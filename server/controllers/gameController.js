@@ -15,6 +15,75 @@ export const getTournamentStatus = async (req, res) => {
   }
 };
 
+const updateMatchIds = async () => {
+  try {
+    const { data: matches, error } = await supabase
+      .from('matches')
+      .select('*')
+      .order('level', { ascending: true })
+      .order('match_number', { ascending: true });
+
+    if (error) throw error;
+
+    let counters = {
+      1: 1, // Round of 32 counter
+      2: 1, // Round of 16 counter
+      3: 1, // Quarter Finals counter
+      4: 1, // Semi Finals counter
+      5: 1  // Finals counter
+    };
+
+    const updates = matches.map(match => {
+      let newId = '';
+      switch (match.level) {
+        case 1:
+          newId = `ROUND-OF-32-${counters[1]++}`;
+          break;
+        case 2:
+          newId = `ROUND-OF-16-${counters[2]++}`;
+          break;
+        case 3:
+          newId = `QUARTER-FINAL-${counters[3]++}`;
+          break;
+        case 4:
+          newId = `SEMI-FINAL-${counters[4]++}`;
+          break;
+        case 5:
+          newId = `FINAL-${counters[5]++}`;
+          break;
+      }
+      return {
+        id: newId,
+        match_number: match.match_number,
+        level: match.level,
+        p1: match.p1,
+        p2: match.p2,
+        cf_question: match.cf_question,
+        title: match.title
+      };
+    });
+
+    // Delete existing matches first
+    const { error: deleteError } = await supabase
+      .from('matches')
+      .delete()
+      .neq('match_number', -1);
+
+    if (deleteError) throw deleteError;
+
+    // Insert updated matches
+    const { error: updateError } = await supabase
+      .from('matches')
+      .insert(updates);
+
+    if (updateError) throw updateError;
+    return true;
+  } catch (error) {
+    console.error('Error updating match IDs:', error);
+    throw error;
+  }
+};
+
 export const startgame = async (req, res) => {
   try {
     const { round } = req.body;
@@ -92,6 +161,9 @@ export const startgame = async (req, res) => {
       .upsert(updates);
 
     if (updateError) throw updateError;
+
+    // Update match IDs
+    await updateMatchIds();
 
     // Update players max_round
     const playerIds = shuffledUsers.slice(0, 32).map(user => user.id);
@@ -178,7 +250,8 @@ export const reset = async (req, res) => {
 
     if (userError) throw userError;
 
-    // Reset all questions to unused
+    // Reset all questions to unused        id: newId,
+
     const { error: questionError } = await supabase
       .from('problemset')
       .update({ used: false })
@@ -192,3 +265,4 @@ export const reset = async (req, res) => {
     res.status(500).json({ error: 'Failed to reset game' });
   }
 };
+
