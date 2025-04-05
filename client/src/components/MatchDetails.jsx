@@ -177,31 +177,39 @@ const GetProblemLink = () => {
           )}
           
           {result && (
-            <div className={`mt-4 ${result.problemLink ? 'bg-[#3ECF8E]/10 border-l-4 border-[#3ECF8E]' : 'bg-yellow-500/10 border-l-4 border-yellow-500'} p-4 rounded-md`}>
-              <div className="flex">
+            <div className={`mt-4 ${result.problemLink ? 'bg-[#3ECF8E]/5 border border-[#3ECF8E]/20' : 'bg-yellow-500/5 border border-yellow-500/20'} p-6 rounded-xl`}>
+              <div className="flex flex-col items-center text-center">
                 {result.problemLink ? (
-                  <CheckCircle className="h-5 w-5 text-[#3ECF8E] mr-2 flex-shrink-0" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0" />
-                )}
-                <div>
-                  <p className={`text-sm font-medium ${result.problemLink ? 'text-[#3ECF8E]' : 'text-yellow-400'}`}>
-                    {result.problemLink ? 'Success' : 'Note'}
-                  </p>
-                  <p className={`text-sm ${result.problemLink ? 'text-[#3ECF8E]/90' : 'text-yellow-400/90'} mt-1`}>
-                    {result.message}
-                  </p>
-                  {result.problemLink && (
+                  <>
+                    <div className="w-12 h-12 rounded-full bg-[#3ECF8E]/10 flex items-center justify-center mb-3">
+                      <CheckCircle className="h-6 w-6 text-[#3ECF8E]" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-[#3ECF8E] mb-2">
+                      Success!
+                    </h3>
+                    <p className="text-sm text-[#3ECF8E]/80 mb-4">
+                      {result.message}
+                    </p>
                     <a 
                       href={result.problemLink} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center text-[#3ECF8E] hover:text-[#3AC489] text-sm font-medium mt-2"
+                      className="group flex items-center justify-center w-full max-w-xs bg-gradient-to-r from-[#3ECF8E] to-[#3AC489] text-[#0A0A0A] font-medium py-3 px-6 rounded-lg hover:shadow-lg hover:shadow-[#3ECF8E]/20 transform hover:-translate-y-0.5 transition-all duration-200"
                     >
-                      Open Problem <ExternalLink className="ml-1 h-4 w-4" />
+                      <span>Open Problem</span>
+                      <ExternalLink className="ml-2 h-4 w-4 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
                     </a>
-                  )}
-                </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center mb-3">
+                      <AlertCircle className="h-6 w-6 text-yellow-400" />
+                    </div>
+                    <p className="text-sm text-yellow-400/90">
+                      {result.message}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           )}
