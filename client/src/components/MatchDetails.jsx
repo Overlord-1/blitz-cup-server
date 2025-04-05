@@ -106,17 +106,17 @@ const GetProblemLink = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-900 p-4">
-      <div className="w-full max-w-md border border-emerald-500/30 rounded-lg shadow-xl bg-gray-800 overflow-hidden">
-        <div className="bg-gradient-to-r from-emerald-600 to-blue-500 p-6">
-          <h2 className="text-xl font-bold mb-1 text-white">Get Problem Link</h2>
-          <p className="text-sm text-white/80">Enter a match ID to retrieve the problem link</p>
+    <div className="p-4">
+      <div className="bg-transparent rounded-2xl shadow-lg p-6">
+        <div className="bg-transparent p-6 rounded-t-lg">
+          <h2 className="text-xl font-bold mb-1 text-[#E5E7EB] text-center">Get Problem Link</h2>
+          <p className="text-sm text-[#6B7280] text-center">Enter a match ID to retrieve the problem link</p>
         </div>
         
         <div className="p-6">
           <form onSubmit={handleSubmit}>
             <div className="mb-4 relative" ref={dropdownRef}>
-              <label htmlFor="matchId" className="block text-sm font-medium text-gray-300 mb-1">
+              <label htmlFor="matchId" className="block text-sm font-medium text-[#6B7280] mb-1">
                 Match ID
               </label>
               <div className="relative">
@@ -130,23 +130,23 @@ const GetProblemLink = () => {
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   placeholder="Select or type match ID"
-                  className="w-full px-3 py-2 pl-9 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full px-3 py-2 pl-9 bg-[#1C1C1C] border border-[#3ECF8E]/20 text-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#3ECF8E] focus:border-[#3ECF8E]"
                 />
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Search className="h-4 w-4 text-gray-400" />
+                  <Search className="h-4 w-4 text-[#6B7280]" />
                 </div>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                  <ChevronDown className="h-4 w-4 text-[#6B7280]" />
                 </div>
               </div>
               
               {showSuggestions && filteredOptions.length > 0 && (
-                <ul className="absolute z-10 mt-1 w-full bg-gray-700 border border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
+                <ul className="absolute z-10 mt-1 w-full bg-[#1C1C1C] border border-[#3ECF8E]/20 rounded-md shadow-lg max-h-60 overflow-auto">
                   {filteredOptions.map((option, index) => (
                     <li 
                       key={index}
                       onClick={() => selectOption(option)}
-                      className="px-4 py-2 hover:bg-gray-600 cursor-pointer text-gray-200 text-sm"
+                      className="px-4 py-2 hover:bg-[#3ECF8E]/10 cursor-pointer text-[#E5E7EB] text-sm"
                     >
                       {option}
                     </li>
@@ -157,7 +157,7 @@ const GetProblemLink = () => {
             
             <button 
               type="submit" 
-              className={`w-full bg-gradient-to-r from-emerald-600 to-blue-500 text-white font-medium py-2 px-4 rounded-md hover:from-emerald-700 hover:to-blue-600 transition-all ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`w-full bg-[#3ECF8E] text-[#0A0A0A] font-medium py-2 px-4 rounded-md hover:bg-[#3AC489] hover:shadow-lg hover:shadow-[#3ECF8E]/10 transition-all ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
               disabled={loading}
             >
               {loading ? 'Loading...' : 'Get Problem Link'}
@@ -165,7 +165,7 @@ const GetProblemLink = () => {
           </form>
           
           {error && (
-            <div className="mt-4 bg-red-900/30 border-l-4 border-red-500 p-4 rounded-md">
+            <div className="mt-4 bg-red-500/10 border-l-4 border-red-500 p-4 rounded-md">
               <div className="flex">
                 <AlertCircle className="h-5 w-5 text-red-400 mr-2 flex-shrink-0" />
                 <div>
@@ -177,18 +177,18 @@ const GetProblemLink = () => {
           )}
           
           {result && (
-            <div className={`mt-4 ${result.problemLink ? 'bg-emerald-900/30 border-l-4 border-emerald-500' : 'bg-yellow-900/30 border-l-4 border-yellow-500'} p-4 rounded-md`}>
+            <div className={`mt-4 ${result.problemLink ? 'bg-[#3ECF8E]/10 border-l-4 border-[#3ECF8E]' : 'bg-yellow-500/10 border-l-4 border-yellow-500'} p-4 rounded-md`}>
               <div className="flex">
                 {result.problemLink ? (
-                  <CheckCircle className="h-5 w-5 text-emerald-400 mr-2 flex-shrink-0" />
+                  <CheckCircle className="h-5 w-5 text-[#3ECF8E] mr-2 flex-shrink-0" />
                 ) : (
                   <AlertCircle className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0" />
                 )}
                 <div>
-                  <p className={`text-sm font-medium ${result.problemLink ? 'text-emerald-400' : 'text-yellow-400'}`}>
+                  <p className={`text-sm font-medium ${result.problemLink ? 'text-[#3ECF8E]' : 'text-yellow-400'}`}>
                     {result.problemLink ? 'Success' : 'Note'}
                   </p>
-                  <p className={`text-sm ${result.problemLink ? 'text-emerald-400/90' : 'text-yellow-400/90'} mt-1`}>
+                  <p className={`text-sm ${result.problemLink ? 'text-[#3ECF8E]/90' : 'text-yellow-400/90'} mt-1`}>
                     {result.message}
                   </p>
                   {result.problemLink && (
@@ -196,7 +196,7 @@ const GetProblemLink = () => {
                       href={result.problemLink} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center text-blue-400 hover:text-blue-300 text-sm font-medium mt-2"
+                      className="flex items-center text-[#3ECF8E] hover:text-[#3AC489] text-sm font-medium mt-2"
                     >
                       Open Problem <ExternalLink className="ml-1 h-4 w-4" />
                     </a>
@@ -207,7 +207,7 @@ const GetProblemLink = () => {
           )}
         </div>
         
-        <div className="border-t border-gray-700 p-4 bg-gray-800 text-xs text-gray-400">
+        <div className="border-t border-[#3ECF8E]/20 p-4 bg-[#0A0A0A] text-xs text-[#6B7280] rounded-b-lg">
           Enter the match ID to retrieve the corresponding problem link from Codeforces.
         </div>
       </div>
