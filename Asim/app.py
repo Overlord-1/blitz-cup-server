@@ -3,72 +3,15 @@ from flask_cors import CORS
 import requests
 import time
 import threading
-import signal
-import os
-import json
-import atexit
-from concurrent.futures import ThreadPoolExecutor
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-cors = CORS(app)
+cors=CORS(app)
 
-# Constants
-DATA_FILE = 'tracking_data.json'
-WINNERS_FILE = 'winners_data.json'
-MAX_WORKERS = 10  # Maximum number of concurrent tracking threads
-POLL_INTERVAL = 10  # seconds between API polls (increased to reduce load)
-API_TIMEOUT = 5  # seconds for API request timeout
-
-# Create a thread pool executor
-executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
-
-# Dictionary to store active tracking information
+# Dictionary to store active tracking threads, not just results
+tracking_threads = {}
 active_tracking = {}
-# Dictionary to track futures for each tracking job
-tracking_futures = {}
-# List to store winners information
+# New list to store winners information
 winners_list = []
-
-# Flag to indicate shutdown in progress
-shutdown_in_progress = False
-
-def load_data():
-    """Load tracking and winners data from disk if available."""
-    global active_tracking, winners_list
-    
-    try:
-        if os.path.exists(DATA_FILE):
-            with open(DATA_FILE, 'r') as f:
-                active_tracking = json.load(f)
-            logger.info(f"Loaded {len(active_tracking)} tracking records from {DATA_FILE}")
-    except Exception as e:
-        logger.error(f"Error loading tracking data: {str(e)}")
-    
-    try:
-        if os.path.exists(WINNERS_FILE):
-            with open(WINNERS_FILE, 'r') as f:
-                winners_list = json.load(f)
-            logger.info(f"Loaded {len(winners_list)} winners from {WINNERS_FILE}")
-    except Exception as e:
-        logger.error(f"Error loading winners data: {str(e)}")
-
-def save_data():
-    """Save tracking and winners data to disk."""
-    try:
-        with open(DATA_FILE, 'w') as f:
-            json.dump(active_tracking, f)
-        logger.info(f"Saved {len(active_tracking)} tracking records to {DATA_FILE}")
-        
-        with open(WINNERS_FILE, 'w') as f:
-            json.dump(winners_list, f)
-        logger.info(f"Saved {len(winners_list)} winners to {WINNERS_FILE}")
-    except Exception as e:
-        logger.error(f"Error saving data: {str(e)}")
 
 def check_problem_solution(handle1, handle2, problem_id, tracking_id):
     """
@@ -84,8 +27,6 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
     Returns:
         dict: Result containing winner and timing information
     """
-    global shutdown_in_progress
-    
     try:
         contest_id, problem_index = problem_id.split("/")
         
@@ -95,54 +36,46 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
         handle1_time = None
         handle2_time = None
         
-        poll_count = 0
-        max_polls = 720  # 2 hours of polling at 10-second intervals
+        poll_interval = 5  # seconds
         
-        while not shutdown_in_progress and poll_count < max_polls:
-            poll_count += 1
-            
-            # Check if this tracking has been cancelled
-            if tracking_id not in active_tracking:
-                logger.info(f"Tracking {tracking_id} was cancelled")
-                return None
-            
+        # Track if this thread should stop
+        should_stop = threading.Event()
+        tracking_threads[tracking_id] = should_stop
+        
+        while not should_stop.is_set():
             # Check first handle
             if not handle1_solved:
                 try:
-                    url1 = f"https://codeforces.com/api/user.status?handle={handle1}&count=5"
-                    response1 = requests.get(url1, timeout=API_TIMEOUT)
+                    url1 = f"https://codeforces.com/api/user.status?handle={handle1}&count=1"  # Only get the latest submission
+                    response1 = requests.get(url1)
                     data1 = response1.json()
                     
                     if data1["status"] == "OK" and data1["result"]:
-                        # Check the last 5 submissions for a match
-                        for submission in data1["result"]:
-                            if (str(submission["problem"].get("contestId")) == contest_id and 
-                                submission["problem"].get("index") == problem_index and 
-                                submission["verdict"] == "OK"):
-                                handle1_solved = True
-                                handle1_time = submission["creationTimeSeconds"]
-                                break
+                        submission = data1["result"][0]  # Get the latest submission
+                        if (str(submission["problem"].get("contestId")) == contest_id and 
+                            submission["problem"].get("index") == problem_index and 
+                            submission["verdict"] == "OK"):
+                            handle1_solved = True
+                            handle1_time = submission["creationTimeSeconds"]
                 except Exception as e:
-                    logger.warning(f"Error checking {handle1}: {str(e)}")
+                    print(f"Error checking {handle1}: {str(e)}")
             
             # Check second handle
             if not handle2_solved:
                 try:
-                    url2 = f"https://codeforces.com/api/user.status?handle={handle2}&count=5"
-                    response2 = requests.get(url2, timeout=API_TIMEOUT)
+                    url2 = f"https://codeforces.com/api/user.status?handle={handle2}&count=1"  # Only get the latest submission
+                    response2 = requests.get(url2)
                     data2 = response2.json()
                     
                     if data2["status"] == "OK" and data2["result"]:
-                        # Check the last 5 submissions for a match
-                        for submission in data2["result"]:
-                            if (str(submission["problem"].get("contestId")) == contest_id and 
-                                submission["problem"].get("index") == problem_index and 
-                                submission["verdict"] == "OK"):
-                                handle2_solved = True
-                                handle2_time = submission["creationTimeSeconds"]
-                                break
+                        submission = data2["result"][0]  # Get the latest submission
+                        if (str(submission["problem"].get("contestId")) == contest_id and 
+                            submission["problem"].get("index") == problem_index and 
+                            submission["verdict"] == "OK"):
+                            handle2_solved = True
+                            handle2_time = submission["creationTimeSeconds"]
                 except Exception as e:
-                    logger.warning(f"Error checking {handle2}: {str(e)}")
+                    print(f"Error checking {handle2}: {str(e)}")
             
             # Check if we have a winner
             if handle1_solved and handle2_solved:
@@ -158,9 +91,7 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                         "match_id": tracking_id
                     }
                     # Add winner to the winners list
-                    winner_entry = {"match_id": tracking_id, "winner": handle1}
-                    if winner_entry not in winners_list:
-                        winners_list.append(winner_entry)
+                    winners_list.append({"match_id": tracking_id, "winner": handle1})
                 else:
                     result = {
                         "winner": handle2,
@@ -172,12 +103,11 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                         "match_id": tracking_id
                     }
                     # Add winner to the winners list
-                    winner_entry = {"match_id": tracking_id, "winner": handle2}
-                    if winner_entry not in winners_list:
-                        winners_list.append(winner_entry)
-                
+                    winners_list.append({"match_id": tracking_id, "winner": handle2})
                 active_tracking[tracking_id] = result
-                save_data()  # Save to disk when we have a winner
+                # Clean up
+                if tracking_id in tracking_threads:
+                    del tracking_threads[tracking_id]
                 return result
             elif handle1_solved:
                 result = {
@@ -190,12 +120,11 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                     "match_id": tracking_id
                 }
                 # Add winner to the winners list
-                winner_entry = {"match_id": tracking_id, "winner": handle1}
-                if winner_entry not in winners_list:
-                    winners_list.append(winner_entry)
-                
+                winners_list.append({"match_id": tracking_id, "winner": handle1})
                 active_tracking[tracking_id] = result
-                save_data()  # Save to disk when we have a winner
+                # Clean up
+                if tracking_id in tracking_threads:
+                    del tracking_threads[tracking_id]
                 return result
             elif handle2_solved:
                 result = {
@@ -208,38 +137,16 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                     "match_id": tracking_id
                 }
                 # Add winner to the winners list
-                winner_entry = {"match_id": tracking_id, "winner": handle2}
-                if winner_entry not in winners_list:
-                    winners_list.append(winner_entry)
-                
+                winners_list.append({"match_id": tracking_id, "winner": handle2})
                 active_tracking[tracking_id] = result
-                save_data()  # Save to disk when we have a winner
+                # Clean up
+                if tracking_id in tracking_threads:
+                    del tracking_threads[tracking_id]
                 return result
             
-            # Update tracking status with last poll time
-            current_time = int(time.time())
-            if tracking_id in active_tracking and isinstance(active_tracking[tracking_id], dict):
-                active_tracking[tracking_id]["last_poll"] = current_time
-                # Periodically save tracking status to disk (every 50 polls)
-                if poll_count % 50 == 0:
-                    save_data()
-            
             # Wait before polling again
-            time.sleep(POLL_INTERVAL)
-        
-        # If we reach max polls without a winner
-        if poll_count >= max_polls:
-            result = {
-                "status": "timeout",
-                "message": "Tracking exceeded maximum time limit (2 hours)",
-                "match_id": tracking_id
-            }
-            active_tracking[tracking_id] = result
-            save_data()
-            return result
-            
+            time.sleep(poll_interval)
     except Exception as e:
-        logger.error(f"Error in tracking thread for {tracking_id}: {str(e)}")
         result = {
             "error": str(e),
             "status": "error",
@@ -247,7 +154,9 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
             "match_id": tracking_id
         }
         active_tracking[tracking_id] = result
-        save_data()
+        # Clean up
+        if tracking_id in tracking_threads:
+            del tracking_threads[tracking_id]
         return result
 
 @app.route('/start_tracking', methods=['POST'])
@@ -273,32 +182,29 @@ def start_tracking():
                 "message": "This match ID is already being used for tracking"
             }), 400
         
-        # Check if we're at capacity
-        if len(tracking_futures) >= MAX_WORKERS:
-            return jsonify({
-                "error": "Server at capacity", 
-                "status": "error",
-                "message": f"Maximum number of concurrent tracking jobs ({MAX_WORKERS}) already running"
-            }), 503
+        # Start tracking in a separate thread
+        def tracking_thread():
+            try:
+                check_problem_solution(handle1, handle2, problem_id, tracking_id)
+            except Exception as e:
+                active_tracking[tracking_id] = {
+                    "error": str(e),
+                    "status": "error",
+                    "message": f"An error occurred in tracking thread: {str(e)}",
+                    "match_id": match_id
+                }
         
-        # Start tracking with the thread pool
-        future = executor.submit(check_problem_solution, handle1, handle2, problem_id, tracking_id)
-        tracking_futures[tracking_id] = future
+        thread = threading.Thread(target=tracking_thread)
+        thread.daemon = True
+        thread.start()
         
-        # Store initial tracking status
         active_tracking[tracking_id] = {
             "status": "tracking",
             "handle1": handle1,
             "handle2": handle2,
             "problem_id": problem_id,
-            "match_id": match_id,
-            "start_time": int(time.time())
+            "match_id": match_id
         }
-        
-        # Save to disk
-        save_data()
-        
-        logger.info(f"Started tracking {tracking_id}: {handle1} vs {handle2} for problem {problem_id}")
         
         return jsonify({
             "tracking_id": tracking_id,
@@ -307,7 +213,6 @@ def start_tracking():
             "message": f"Now tracking {handle1} vs {handle2} for problem {problem_id}"
         })
     except Exception as e:
-        logger.error(f"Error starting tracking: {str(e)}")
         return jsonify({
             "error": str(e),
             "status": "error",
@@ -327,20 +232,19 @@ def check_status(tracking_id):
             
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error checking status: {str(e)}")
         return jsonify({
             "error": str(e), 
             "status": "error",
             "message": f"An error occurred while checking status: {str(e)}"
         }), 500
+    
 
 @app.route('/', methods=['GET'])
 def health_check():
     return jsonify({
-        "status": "alive",
-        "active_tracking_count": len(active_tracking),
-        "active_threads": len(tracking_futures)
+        "status":"alive"
     })
+    
 
 @app.route('/stop_tracking', methods=['POST'])
 def stop_tracking():
@@ -371,7 +275,7 @@ def stop_tracking():
                         "match_id": tracking_id
                     }
                 # Only stop tracking if there's no winner yet
-                elif tracking_id in tracking_futures:
+                elif tracking_id in tracking_threads:
                     # Check if winner exists in the status
                     if isinstance(status, dict) and "winner" in status:
                         # Winner already determined, don't stop
@@ -382,31 +286,14 @@ def stop_tracking():
                             "match_id": tracking_id
                         }
                     else:
-                        # No winner yet, stop the tracking
-                        future = tracking_futures[tracking_id]
-                        cancelled = future.cancel()
-                        
-                        if cancelled:
-                            # Successfully cancelled
-                            del tracking_futures[tracking_id]
-                            # Update status to stopped
-                            active_tracking[tracking_id]["status"] = "stopped"
-                            active_tracking[tracking_id]["stopped_at"] = int(time.time())
-                            save_data()
-                            
-                            results[tracking_id] = {
-                                "stopped": True,
-                                "result": active_tracking[tracking_id],
-                                "match_id": tracking_id
-                            }
-                        else:
-                            # Could not cancel, likely already running or done
-                            results[tracking_id] = {
-                                "stopped": False,
-                                "message": "Could not cancel tracking, already running or completed",
-                                "result": active_tracking[tracking_id],
-                                "match_id": tracking_id
-                            }
+                        # No winner yet, don't stop the tracking
+                        results[tracking_id] = {
+                            "stopped": False,
+                            "still_tracking": True,
+                            "result": status,
+                            "match_id": tracking_id,
+                            "message": "Tracking continues until winner is decided"
+                        }
                 else:
                     results[tracking_id] = {
                         "stopped": False,
@@ -425,7 +312,6 @@ def stop_tracking():
             "results": results
         })
     except Exception as e:
-        logger.error(f"Error stopping tracking: {str(e)}")
         return jsonify({
             "error": str(e),
             "status": "error",
@@ -445,12 +331,11 @@ def list_tracking():
                 info["match_id"] = track_id
             
             # Only include active tracking (not stopped or completed)
-            if not isinstance(info, dict) or info.get("status") not in ["stopped", "both_solved", "one_solved", "error", "timeout"]:
+            if not isinstance(info, dict) or info.get("status") not in ["stopped", "both_solved", "one_solved", "error"]:
                 tracking_info[track_id] = info
         
         return jsonify(tracking_info)
     except Exception as e:
-        logger.error(f"Error listing tracking: {str(e)}")
         return jsonify({
             "error": str(e),
             "status": "error",
@@ -459,11 +344,10 @@ def list_tracking():
 
 @app.route('/all_tracking_history', methods=['GET'])
 def all_tracking_history():
-    """Get all tracking history, including stopped and completed items"""
+    """New route to get all tracking history, including stopped and completed items"""
     try:
         return jsonify(active_tracking)
     except Exception as e:
-        logger.error(f"Error getting tracking history: {str(e)}")
         return jsonify({
             "error": str(e),
             "status": "error",
@@ -489,7 +373,6 @@ def matches_completed():
             "matches_completed": completed_matches
         })
     except Exception as e:
-        logger.error(f"Error retrieving completed matches: {str(e)}")
         return jsonify({
             "error": str(e),
             "status": "error",
@@ -508,101 +391,11 @@ def get_winners():
             "winners": winners_list
         })
     except Exception as e:
-        logger.error(f"Error retrieving winners list: {str(e)}")
         return jsonify({
             "error": str(e),
             "status": "error",
             "message": f"An error occurred while retrieving winners list: {str(e)}"
         }), 500
 
-@app.route('/cleanup_old_tracking', methods=['POST'])
-def cleanup_old_tracking():
-    """
-    Cleans up old tracking records to prevent memory build-up.
-    Keeps only recent or active tracking records.
-    """
-    try:
-        data = request.json
-        days_threshold = data.get('days', 7)  # Default to keeping 7 days of data
-        
-        current_time = int(time.time())
-        threshold_time = current_time - (days_threshold * 86400)  # seconds in a day
-        
-        removed_count = 0
-        to_remove = []
-        
-        for tracking_id, status in active_tracking.items():
-            # Skip if not a dictionary or missing required fields
-            if not isinstance(status, dict):
-                continue
-                
-            # Keep all active tracking
-            if status.get("status") == "tracking":
-                continue
-                
-            # Check if it's an old completed or stopped tracking
-            if (status.get("status") in ["both_solved", "one_solved", "stopped", "error", "timeout"] and
-                (status.get("winner_time", 0) < threshold_time or  # Old by winner time
-                 status.get("stopped_at", 0) < threshold_time or   # Old by stop time
-                 status.get("last_poll", 0) < threshold_time)):    # Old by last poll
-                to_remove.append(tracking_id)
-        
-        # Remove old records
-        for tracking_id in to_remove:
-            if tracking_id in tracking_futures:
-                # Try to cancel if still running
-                tracking_futures[tracking_id].cancel()
-                del tracking_futures[tracking_id]
-            
-            del active_tracking[tracking_id]
-            removed_count += 1
-        
-        # Save updated data
-        save_data()
-        
-        return jsonify({
-            "status": "success",
-            "removed_count": removed_count,
-            "remaining_count": len(active_tracking)
-        })
-    except Exception as e:
-        logger.error(f"Error during cleanup: {str(e)}")
-        return jsonify({
-            "error": str(e),
-            "status": "error",
-            "message": f"An error occurred during cleanup: {str(e)}"
-        }), 500
-
-def graceful_shutdown(signum, frame):
-    """Handle termination signals gracefully"""
-    global shutdown_in_progress
-    
-    logger.info(f"Received signal {signum}, shutting down gracefully...")
-    shutdown_in_progress = True
-    
-    # Save current state
-    save_data()
-    
-    # Cancel all running futures
-    for tracking_id, future in list(tracking_futures.items()):
-        future.cancel()
-    
-    # Shutdown the executor
-    executor.shutdown(wait=False)
-    
-    logger.info("Graceful shutdown completed")
-
-# Register signal handlers
-signal.signal(signal.SIGTERM, graceful_shutdown)
-signal.signal(signal.SIGINT, graceful_shutdown)
-
-# Register functions to run at exit
-atexit.register(save_data)
-atexit.register(lambda: executor.shutdown(wait=False))
-
-# Load data on startup
-load_data()
-
 if __name__ == '__main__':
-    
     app.run()
