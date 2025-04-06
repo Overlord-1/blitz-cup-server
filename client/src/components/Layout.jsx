@@ -27,7 +27,7 @@ const Layout = ({ children }) => {
             className="max-w-screen mx-auto px-4 py-6"
         >
             <nav>
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 xl:px-10">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 xl:px-40">
                     <motion.h1 
                         initial={{ x: -20 }}
                         animate={{ x: 0 }}
