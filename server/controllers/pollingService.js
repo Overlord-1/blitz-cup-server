@@ -54,11 +54,14 @@ async function getRandomQuestion(level) {
 async function updateMatchWinner(matchId, winnerHandle) {
     // Skip if this match was already processed
     if (processedMatches.has(matchId)) {
-        console.log(`Match ${matchId} already processed, skipping...`);
+        console.log(`⚠️ Skipping match ${matchId} - already processed before`);
         return;
     }
 
     try {
+        // Add the match to processed set BEFORE processing to prevent race conditions
+        processedMatches.add(matchId);
+
         const { data: userData, error: userError } = await supabase
             .from('users')
             .select('id')
@@ -135,23 +138,31 @@ async function updateMatchWinner(matchId, winnerHandle) {
 
         console.log(`Updated winner for match ${matchId}: ${winnerHandle}`);
         console.log(`Updated next match ${nextMatchNumber} with winner as ${updateField} and question ${questionId}`);
-
-        // Add the match to processed set after successful update
-        processedMatches.add(matchId);
         
     } catch (error) {
+        // If there's an error, remove from processed set to allow retry
+        processedMatches.delete(matchId);
         console.error('Error in updateMatchWinner:', error);
     }
 }
 
 async function pollWinners() {
     try {
-        const response = await fetch('http://127.0.0.1:5000/winners');
+        const response = await fetch(`${process.env.WORKER_URL}/winners`);
         const data = await response.json();
         if (data.status === 'success' && data.winners && data.winners.length > 0) {
-            // Filter out already processed matches
-            const newWinners = data.winners.filter(match => !processedMatches.has(match.match_id));
+            console.log(`Received ${data.winners.length} matches from /winners endpoint`);
             
+            // Filter out already processed matches and log skipped ones
+            const newWinners = data.winners.filter(match => {
+                if (processedMatches.has(match.match_id)) {
+                    console.log(`⏭️ Skipping duplicate match ${match.match_id} from /winners response`);
+                    return false;
+                }
+                return true;
+            });
+            
+            console.log(`Processing ${newWinners.length} new matches...`);
             for (const match of newWinners) {
                 await updateMatchWinner(match.match_id, match.winner);
             }
