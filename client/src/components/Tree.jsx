@@ -224,8 +224,8 @@ const Tree = () => {
                     <div className="absolute inset-0 w-10 h-10 border-2 border-[#3ECF8E]/10 rounded-full"></div>
                 </div>
                 <div className="mt-6 space-y-1 text-center">
-                    <p className="text-sm font-medium text-[#E5E7EB]">Loading Tournament</p>
-                    <p className="text-xs text-[#6B7280]">Fetching match data...</p>
+                    <p className="text-sm xl:text-4xl font-medium text-[#E5E7EB]">Loading Tournament</p>
+                    <p className="text-xs xl:text-3xl text-[#6B7280]">Fetching match data...</p>
                 </div>
             </div>
         );
@@ -235,8 +235,8 @@ const Tree = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] w-full mx-auto px-4 animate-fadeIn">
                 <div className="w-full rounded-xl border border-[#3ECF8E]/10 bg-[#3ECF8E]/[0.02] p-8 backdrop-blur-sm">
-                    <h2 className="text-xl font-semibold text-[#3ECF8E] mb-4">Initialize Tournament</h2>
-                    <p className="text-sm text-[#6B7280] mb-6">Start the tournament to generate brackets and begin matches.</p>
+                    <h2 className="text-xl xl:text-6xlfont-semibold text-[#3ECF8E] mb-4">Initialize Tournament</h2>
+                    <p className="text-sm xl:text-4xl text-[#6B7280] mb-6">Start the tournament to generate brackets and begin matches.</p>
                     <button
                         onClick={initializeTournament}
                         disabled={loading || isAnimating}
