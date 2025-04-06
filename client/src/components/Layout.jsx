@@ -34,7 +34,7 @@ const Layout = ({ children }) => {
                         transition={{ type: "spring", stiffness: 300 }}
                         className="text-5xl font-semibold font-electrolize after:content-[''] relative after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-gradient-to-r after:from-[#3ECF8E] after:to-[#3AC489] after:rounded-md"
                     >
-                        <span className="bg-gradient-to-r from-[#3ECF8E] to-[#3AC489] bg-clip-text text-transparent">
+                        <span className="bg-gradient-to-r from-[#3ECF8E] to-[#3AC489] bg-clip-text text-transparent xl:text-8xl xl:text-center">
                             IEEE Blitz Cup
                         </span>
                     </motion.h1>
