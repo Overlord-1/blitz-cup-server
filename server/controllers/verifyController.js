@@ -98,10 +98,10 @@ export const changeQuestion = async (req, res) => {
     }
 
     try {
-        // Get current match details
+        // Get current match details including the level
         const { data: match, error: matchError } = await supabase
             .from('matches')
-            .select('cf_question')
+            .select('cf_question, level')
             .eq('id', matchId)
             .single();
 
@@ -112,18 +112,20 @@ export const changeQuestion = async (req, res) => {
         }
 
         const oldQuestionId = match.cf_question;
+        const level = match.level;
 
-        // Get a new unused question
+        // Get a new unused question from the same band/level
         const { data: newQuestion, error: questionError } = await supabase
             .from('problemset')
             .select('id')
             .eq('used', false)
+            .eq('band', level)
             .limit(1)
             .single();
 
         if (questionError || !newQuestion) {
             return res.status(404).json({
-                message: 'No unused questions available'
+                message: 'No unused questions available in the same difficulty band'
             });
         }
 
