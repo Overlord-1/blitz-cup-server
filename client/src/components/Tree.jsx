@@ -12,7 +12,7 @@ const Tree = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [isAnimating, setIsAnimating] = useState(false);
-    const [tournamentStatus, setTournamentStatus] = useState(false);
+    const [tournamentStatus, setTournamentStatus] = useState(true);
     const [winners, setWinners] = useState(new Set());
     const [showWinnerAnimation, setShowWinnerAnimation] = useState(false);
     const [currentWinner, setCurrentWinner] = useState(null);
