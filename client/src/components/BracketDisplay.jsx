@@ -4,10 +4,10 @@ import { motion } from 'framer-motion';
 
 const BracketDisplay = ({ matches, participants }) => {
     // Calculate dimensions based on tournament structure
-    const columnWidth = 280;
-    const matchHeight = 100;
-    const bracketWidth = columnWidth * 9; // 9 columns total (4 left + finals + 4 right)
-    const bracketHeight = matchHeight * 11; // Height to accommodate 8 first-round matches
+    // const columnWidth = 280;
+    // const matchHeight = 100;
+    // const bracketWidth = columnWidth * 9; // 9 columns total (4 left + finals + 4 right)
+    // const bracketHeight = matchHeight * 11; // Height to accommodate 8 first-round matches
 
     return (
         <motion.div 
@@ -20,11 +20,11 @@ const BracketDisplay = ({ matches, participants }) => {
                 initial={{ scale: 0.95 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="relative" 
-                style={{ width: bracketWidth, height: bracketHeight }}
+                className="relative w-full" 
+                // style={{ width: bracketWidth, height: bracketHeight }}
             >
         <div className="w-full pb-8 overflow-x-auto ">
-            <div className="relative" style={{ width: bracketWidth, height: bracketHeight }}>
+            <div className="relative w-full">
                 <div className="flex flex-row gap-16 w-full h-full">
                     {/* Left Bracket */}
                     <div className="flex flex-col justify-around">

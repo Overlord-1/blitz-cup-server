@@ -23,7 +23,7 @@ const Tree = () => {
             const matchesResponse = await axios.get(`${backendURL}/game/get-matches`);
             const newMatches = matchesResponse.data;
             setMatches(newMatches);
-            // console.log(matches)
+            console.log(matches)
         } catch (err) {
             console.error('Error fetching matches:', err);
         }
@@ -124,6 +124,7 @@ const Tree = () => {
     useEffect(() => {
         const checkTournamentStatus = async () => {
             try {
+                
                 const response = await axios.get(`${backendURL}/game/get-tournament-status`);
                 const { status } = response.data;
                 setTournamentStatus(status);
@@ -228,7 +229,7 @@ const Tree = () => {
 
     if (!tournamentStatus || !participants) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] max-w-md mx-auto px-4 animate-fadeIn">
+            <div className="flex flex-col items-center justify-center min-h-[400px] w-full mx-auto px-4 animate-fadeIn">
                 <div className="w-full rounded-xl border border-[#3ECF8E]/10 bg-[#3ECF8E]/[0.02] p-8 backdrop-blur-sm">
                     <h2 className="text-xl font-semibold text-[#3ECF8E] mb-4">Initialize Tournament</h2>
                     <p className="text-sm text-[#6B7280] mb-6">Start the tournament to generate brackets and begin matches.</p>
