@@ -146,7 +146,7 @@ async function updateMatchWinner(matchId, winnerHandle) {
 
 async function pollWinners() {
     try {
-        const response = await fetch(`${WORKER_URL}/winners`);
+        const response = await fetch(`${process.env.WORKER_URL}/winners`);
         const data = await response.json();
         if (data.status === 'success' && data.winners && data.winners.length > 0) {
             // Filter out already processed matches
