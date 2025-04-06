@@ -3,7 +3,7 @@ import React from 'react';
 const Round = ({ size, desc, players = [], matches = [] }) => {
   return (
     <div className="flex flex-col justify-center round mb-4">
-      <h3 className="text-white text-center font-semibold mb-2 text-sm">{desc}</h3>
+      <h3 className="text-white text-center font-semibold mb-2 text-lg">{desc}</h3>
       <div className="matches flex flex-col gap-2">
         {[...Array(size)].map((_, i) => {
           const player1 = players[i * 2];
@@ -23,7 +23,7 @@ const Round = ({ size, desc, players = [], matches = [] }) => {
                 }`}
               >
                 <div className="flex justify-between items-center">
-                  <span className="text-white text-sm truncate max-w-[120px]">
+                  <span className="text-white text-lg truncate max-w-[120px]">
                     {player1?.cf_handle || `P${i * 2 + 1}`}
                   </span>
                 </div>
@@ -36,7 +36,7 @@ const Round = ({ size, desc, players = [], matches = [] }) => {
                 }`}
               >
                 <div className="flex justify-between items-center">
-                  <span className="text-white text-sm truncate max-w-[120px]">
+                  <span className="text-white text-lg truncate max-w-[120px]">
                     {player2?.cf_handle || `P${i * 2 + 2}`}
                   </span>
                 </div>
