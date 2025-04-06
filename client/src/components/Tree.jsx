@@ -176,20 +176,20 @@ const Tree = () => {
         }
     };
 
-    const resetTournament = async () => {
-        try {
-            setLoading(true);
-            setParticipants(null);
-            setMatches([]);
-            await axios.get(`${backendURL}/game/reset`);
-            setTournamentStatus(false);
-        } catch (err) {
-            setError(err.message || 'Failed to reset tournament');
-            console.error('Tournament reset error:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // const resetTournament = async () => {
+    //     try {
+    //         setLoading(true);
+    //         setParticipants(null);
+    //         setMatches([]);
+    //         await axios.get(`${backendURL}/game/reset`);
+    //         setTournamentStatus(false);
+    //     } catch (err) {
+    //         setError(err.message || 'Failed to reset tournament');
+    //         console.error('Tournament reset error:', err);
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
 
     if (error) {
         return (
@@ -253,7 +253,7 @@ const Tree = () => {
     }
 
     return (
-        <>
+        <div className='flex justify-center align-middle overflow-auto mt-28'>
         <div className="relative animate-fadeIn">
             <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#0A0A0A] to-transparent pointer-events-none z-10"></div>
             <div className="relative overflow-x-auto overflow-y-hidden">
@@ -282,7 +282,7 @@ const Tree = () => {
                 </motion.div>
             </AnimatePresence>
         )}
-    </>);
+    </div>);
 };
 
 export default Tree;
