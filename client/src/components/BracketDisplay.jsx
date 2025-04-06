@@ -25,7 +25,7 @@ const BracketDisplay = ({ matches, participants }) => {
             >
         <div className="w-full pb-8 overflow-x-auto ">
             <div className="relative w-full">
-                <div className="flex flex-row gap-16 w-full h-full">
+                <div className="flex flex-row gap-16 w-full h-full mt-20">
                     {/* Left Bracket */}
                     <div className="flex flex-col justify-around">
                         <AllRounds

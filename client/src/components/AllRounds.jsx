@@ -95,7 +95,7 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
                                                 <div className="absolute inset-0 animate-ping rounded-full bg-[#3ECF8E]/30" />
                                             )}
                                         </div>
-                                        <span className={`text-sm font-medium truncate max-w-[180px] ${isPlayer1Winner ? 'text-[#3ECF8E]' : matchData.winner ? 'text-[#FF0000]/80' : 'text-[#E5E7EB] group-hover:text-white'}`}>
+                                        <span className={`text-xl font-medium truncate max-w-[180px] ${isPlayer1Winner ? 'text-[#3ECF8E]' : matchData.winner ? 'text-[#FF0000]/80' : 'text-[#E5E7EB] group-hover:text-white'}`}>
                                             {matchData.p1 || 'TBD'}
                                         </span>
                                     </div>
@@ -112,7 +112,7 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
                             </div>
 
                             {/* Separator with "V/S" */}
-                            <div className="flex items-center justify-center w-full text-[#6B7280] font-medium text-sm">
+                            <div className="flex items-center justify-center w-full text-[#6B7280] font-medium text-xl">
                                 V/S
                             </div>
 
@@ -126,7 +126,7 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
                                                 <div className="absolute inset-0 animate-ping rounded-full bg-[#3ECF8E]/30" />
                                             )}
                                         </div>
-                                        <span className={`text-sm font-medium truncate max-w-[180px] ${isPlayer2Winner ? 'text-[#3ECF8E]' : matchData.winner ? 'text-[#FF0000]/80' : 'text-[#E5E7EB] group-hover:text-white'}`}>
+                                        <span className={`text-xl font-medium truncate max-w-[180px] ${isPlayer2Winner ? 'text-[#3ECF8E]' : matchData.winner ? 'text-[#FF0000]/80' : 'text-[#E5E7EB] group-hover:text-white'}`}>
                                             {matchData.p2 || 'TBD'}
                                         </span>
                                     </div>
@@ -157,12 +157,12 @@ const AllRounds = ({ size, desc, matches = [], level, startIndex, participants }
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: level * 0.2 }}
-                className="text-sm font-medium text-[#6B7280] text-center mb-2 uppercase tracking-wider italic after:content-[''] relative after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-[#6B7280] after:rounded-md"
+                className="text-xl font-medium text-[#6B7280] text-center mb-2 uppercase tracking-wider italic after:content-[''] relative after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-[#6B7280] after:rounded-md"
             >
                 {desc}
             </motion.h3>
             </div>
-            // <h3 className="text-sm font-medium text-[#6B7280] text-center mb-2 uppercase tracking-wider italic">{desc}</h3>
+            // <h3 className="text-xl font-medium text-[#6B7280] text-center mb-2 uppercase tracking-wider italic">{desc}</h3>
     );
 };
 
