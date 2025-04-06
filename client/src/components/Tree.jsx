@@ -218,7 +218,7 @@ const Tree = () => {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center xl:min-h-[800px] animate-fadeIn">
+            <div className="flex flex-col items-center justify-center min-h-[400px] animate-fadeIn">
                 <div className="relative">
                     <div className="w-10 h-10 border-2 border-[#3ECF8E] border-t-transparent rounded-full animate-spin"></div>
                     <div className="absolute inset-0 w-10 h-10 border-2 border-[#3ECF8E]/10 rounded-full"></div>
@@ -233,7 +233,7 @@ const Tree = () => {
 
     if (!tournamentStatus || !participants) {
         return (
-            <div className="flex flex-col items-center text-center justify-center min-h-[400px] w-full mx-auto px-4 animate-fadeIn">
+            <div className="flex flex-col items-center text-center justify-center min-h-[800px] w-full mx-auto px-4 animate-fadeIn">
                 <div className="w-full rounded-xl border border-[#3ECF8E]/10 bg-[#3ECF8E]/[0.02] p-8 backdrop-blur-sm">
                     <h2 className="text-xl xl:text-8xl font-semibold text-[#3ECF8E] mb-4">Initialize Tournament</h2>
                     <p className="text-sm xl:text-6xl text-[#6B7280] mb-6">Start the tournament to generate brackets and begin matches.</p>
@@ -241,8 +241,8 @@ const Tree = () => {
                         onClick={initializeTournament}
                         disabled={loading || isAnimating}
                         className={`
-                            w-1/10 px-4 py-2.5 rounded-lg text-sm xl:text-6xl font-medium
-                            transition-all duration-200 cursor-pointer
+                            w-1/5 px-4 py-2.5 rounded-lg text-sm xl:text-6xl font-medium
+                            transition-all duration-200 cursor-pointer mt-24
                             ${loading || isAnimating
                                 ? 'bg-[#1C1C1C] text-[#6B7280] cursor-not-allowed'
                                 : 'bg-[#3ECF8E] text-[#0A0A0A] hover:bg-[#3AC489] hover:shadow-lg hover:shadow-[#3ECF8E]/10'
