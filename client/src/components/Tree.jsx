@@ -124,7 +124,11 @@ const Tree = () => {
     useEffect(() => {
         const checkTournamentStatus = async () => {
             try {
-                
+                setLoading(true);
+                setIsAnimating(true);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                setLoading(false);
+                setIsAnimating(false);
                 const response = await axios.get(`${backendURL}/game/get-tournament-status`);
                 const { status } = response.data;
                 setTournamentStatus(status);
@@ -158,8 +162,8 @@ const Tree = () => {
 
     const initializeTournament = async () => {
         setLoading(true);
-        setError(null);
         setIsAnimating(true);
+        setError(null);
         
         try {
             await new Promise(resolve => setTimeout(resolve, 2000));
