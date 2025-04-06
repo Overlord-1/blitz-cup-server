@@ -235,13 +235,13 @@ const Tree = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] w-full mx-auto px-4 animate-fadeIn">
                 <div className="w-full rounded-xl border border-[#3ECF8E]/10 bg-[#3ECF8E]/[0.02] p-8 backdrop-blur-sm">
-                    <h2 className="text-xl xl:text-6xlfont-semibold text-[#3ECF8E] mb-4">Initialize Tournament</h2>
+                    <h2 className="text-xl xl:text-6xl font-semibold text-[#3ECF8E] mb-4">Initialize Tournament</h2>
                     <p className="text-sm xl:text-4xl text-[#6B7280] mb-6">Start the tournament to generate brackets and begin matches.</p>
                     <button
                         onClick={initializeTournament}
                         disabled={loading || isAnimating}
                         className={`
-                            w-full px-4 py-2.5 rounded-lg text-sm font-medium
+                            w-1/10 px-4 py-2.5 rounded-lg text-sm xl:text-4xl font-medium
                             transition-all duration-200 cursor-pointer
                             ${loading || isAnimating
                                 ? 'bg-[#1C1C1C] text-[#6B7280] cursor-not-allowed'
