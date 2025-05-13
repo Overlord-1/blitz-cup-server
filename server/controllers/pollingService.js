@@ -146,36 +146,36 @@ async function updateMatchWinner(matchId, winnerHandle) {
     }
 }
 
-async function pollWinners() {
-    try {
-        const response = await fetch(`${process.env.WORKER_URL}/winners`);
-        const data = await response.json();
-        if (data.status === 'success' && data.winners && data.winners.length > 0) {
-            console.log(`Received ${data.winners.length} matches from /winners endpoint`);
+// async function pollWinners() {
+//     try {
+//         const response = await fetch(`${process.env.WORKER_URL}/winners`);
+//         const data = await response.json();
+//         if (data.status === 'success' && data.winners && data.winners.length > 0) {
+//             console.log(`Received ${data.winners.length} matches from /winners endpoint`);
             
-            // Filter out already processed matches and log skipped ones
-            const newWinners = data.winners.filter(match => {
-                if (processedMatches.has(match.match_id)) {
-                    console.log(`⏭️ Skipping duplicate match ${match.match_id} from /winners response`);
-                    return false;
-                }
-                return true;
-            });
+//             // Filter out already processed matches and log skipped ones
+//             const newWinners = data.winners.filter(match => {
+//                 if (processedMatches.has(match.match_id)) {
+//                     console.log(`⏭️ Skipping duplicate match ${match.match_id} from /winners response`);
+//                     return false;
+//                 }
+//                 return true;
+//             });
             
-            console.log(`Processing ${newWinners.length} new matches...`);
-            for (const match of newWinners) {
-                await updateMatchWinner(match.match_id, match.winner);
-            }
-        }
-    } catch (error) {
-        console.error('Error polling winners:', error);
-    }
-}
+//             console.log(`Processing ${newWinners.length} new matches...`);
+//             for (const match of newWinners) {
+//                 await updateMatchWinner(match.match_id, match.winner);
+//             }
+//         }
+//     } catch (error) {
+//         console.error('Error polling winners:', error);
+//     }
+// }
 
 // Start polling
-function startPolling(interval = 2000) {
-    console.log('Started polling for winners...');
-    setInterval(pollWinners, interval);
-}
+// function startPolling(interval = 2000) {
+//     console.log('Started polling for winners...');
+//     setInterval(pollWinners, interval);
+// }
 
-export { startPolling };
+// export { startPolling };
