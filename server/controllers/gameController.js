@@ -1,4 +1,108 @@
+import { Kafka } from 'kafkajs';
 import { supabase } from "../config/connectDB.js";
+
+// Initialize Kafka with retry configuration
+const kafka = new Kafka({
+  clientId: 'blitz-cup-server',
+  brokers: ['localhost:9092'],
+  retry: {
+    initialRetryTime: 100,
+    retries: 8
+  }
+});
+
+const consumer = kafka.consumer({ 
+  groupId: 'results-group',
+  retry: {
+    restartOnFailure: async (error) => {
+      console.error('Kafka consumer error:', error);
+      return true; // Always try to restart
+    }
+  }
+});
+
+// Start Kafka consumer with error handling
+const startKafkaConsumer = async () => {
+  try {
+    await consumer.connect();
+    await consumer.subscribe({ topic: 'Results', fromBeginning: true });
+
+    await consumer.run({
+      eachMessage: async ({ topic, partition, message }) => {
+        try {
+          const matchData = JSON.parse(message.value.toString());
+          await updateMatchWinner(matchData.match_id, matchData.winner);
+        } catch (error) {
+          console.error('Error processing message:', error);
+        }
+      },
+    });
+  } catch (error) {
+    console.error('Failed to start Kafka consumer:', error);
+    // Attempt to reconnect after delay
+    setTimeout(startKafkaConsumer, 5000);
+  }
+};
+
+// Start the Kafka consumer when the server starts
+startKafkaConsumer().catch(console.error);
+
+async function updateMatchWinner(matchId, winnerHandle) {
+  try {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('id')
+      .eq('cf_handle', winnerHandle)
+      .single();
+
+    if (!userData) {
+      console.error(`User ${winnerHandle} not found`);
+      return;
+    }
+
+    // Get the current match details
+    const { data: matchData } = await supabase
+      .from('matches')
+      .select('match_number, level')
+      .eq('id', matchId)
+      .single();
+
+    // Update the current match with the winner
+    await supabase
+      .from('matches')
+      .update({ winner: userData.id })
+      .eq('id', matchId);
+
+    // Calculate next match number
+    const nextMatchNumber = Math.floor(matchData.match_number / 2);
+
+    // Get the next match details
+    const { data: nextMatchData } = await supabase
+      .from('matches')
+      .select('p1, p2, level')
+      .eq('match_number', nextMatchNumber)
+      .single();
+
+    // Get a random question for the next match
+    const questionId = await getRandomQuestion(nextMatchData.level);
+
+    // Determine which player slot to update
+    const updateField = !nextMatchData.p1 ? 'p1' : 'p2';
+
+    // Update the next match
+    await supabase
+      .from('matches')
+      .update({ 
+        [updateField]: userData.id,
+        cf_question: questionId
+      })
+      .eq('match_number', nextMatchNumber);
+
+  } catch (error) {
+    console.error('Error in updateMatchWinner:', error);
+  }
+}
+
 
 export const getTournamentStatus = async (req, res) => {
   try {
