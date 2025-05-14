@@ -108,8 +108,8 @@ def visualize_problem_set(df, analysis_results, output_filename="problem_set_ana
     plt.rcParams['font.family'] = 'DejaVu Sans'
     
     # Color palette
-    palette = sns.color_palette("viridis", 4)
-    band_colors = {1: palette[0], 2: palette[1], 3: palette[2], 4: palette[3]}
+    palette = sns.color_palette("viridis", 5)  # Increase to 5 colors
+    band_colors = {1: palette[0], 2: palette[1], 3: palette[2], 4: palette[3], 5: palette[4]}
     
     # 1. Problems per band (bar chart)
     ax1 = plt.subplot(gs[0, 0])

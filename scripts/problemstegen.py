@@ -2,6 +2,8 @@ import requests
 import random
 import csv
 import time
+import sys
+import argparse
 from collections import Counter
 
 def fetch_all_problems():
@@ -23,9 +25,31 @@ def fetch_all_problems():
         print(f"Error fetching problems: {e}")
         return []
 
+def is_special_problem(problem):
+    """Check if a problem is special based on various indicators"""
+    # Check for special tags
+    special_tags = ['*special', 'special', 'experimental']
+    for tag in problem.get('tags', []):
+        if any(special_word in tag.lower() for special_word in special_tags):
+            return True
+    
+    # Check for special problem index (like 'A1', 'B2', etc.)
+    if problem.get('index', '') and len(problem.get('index', '')) > 1:
+        if problem['index'][0].isalpha() and problem['index'][1:].isdigit():
+            return True
+    
+    # Check for special problem name indicators
+    special_keywords = ['special', 'experimental', 'interactive', 'bonus']
+    if any(keyword in problem.get('name', '').lower() for keyword in special_keywords):
+        return True
+    
+    return False
+
 def filter_problems_by_rating(problems, min_rating, max_rating):
-    """Filter problems by rating range"""
-    return [p for p in problems if 'rating' in p and min_rating <= p['rating'] <= max_rating]
+    """Filter problems by rating range and exclude special problems"""
+    return [p for p in problems if 'rating' in p and 
+            min_rating <= p['rating'] <= max_rating and
+            not is_special_problem(p)]
 
 def get_problem_link(problem):
     """Generate a link to the problem on Codeforces"""
@@ -111,8 +135,18 @@ def add_rating_fluctuations(problems, fluctuation_count, min_allowed, max_allowe
     
     return problems
 
-def create_tournament_problem_set():
-    """Create a balanced tournament problem set"""
+def create_tournament_problem_set(problems_per_band=None):
+    """Create a balanced tournament problem set with customizable number of problems per band"""
+    # Default values if not provided
+    if problems_per_band is None:
+        problems_per_band = {
+            1: 20,  # Band 1 (Round of 16)
+            2: 12,  # Band 2 (Quarter Finals)
+            3: 8,   # Band 3 (Semi Finals)
+            4: 3,   # Band 4 (Finals)
+            5: 3    # Band 5 (Grand Finals)
+        }
+    
     # Fetch all problems
     all_problems = fetch_all_problems()
     if not all_problems:
@@ -123,42 +157,44 @@ def create_tournament_problem_set():
     
     # Container for selected problems
     selected_problems = []
+    all_selected = []
     
-    # Band 1 (Round of 16): 20 problems rated 900-1000 (with some 800 or 1100)
-    band1_regular = filter_problems_by_rating(all_problems, 900, 1000)
-    band1_problems = select_problems_with_tag_balance(band1_regular, 20)
-    band1_problems = add_rating_fluctuations(band1_problems, 2, 800, 1100)
+    # Band 1 (Round of 16): rated 800-1000 (changed from 900-1000)
+    band1_regular = filter_problems_by_rating(all_problems, 800, 1000)
+    print(f"Found {len(band1_regular)} regular problems in Band 1 range after filtering out special problems.")
+    band1_problems = select_problems_with_tag_balance(band1_regular, problems_per_band[1])
+    # No need for fluctuations since the range is already wider
     selected_problems.extend([{"band": 1, "problem": p} for p in band1_problems])
+    all_selected.extend(band1_problems)
     
-    # Band 2 (Quarter Finals): 12 problems rated 1100 (with some 1000 or 1200)
+    # Band 2 (Quarter Finals): rated 1100 (unchanged)
     band2_regular = filter_problems_by_rating(all_problems, 1100, 1100)
-    band2_problems = select_problems_with_tag_balance(band2_regular, 12, band1_problems)
-    band2_problems = add_rating_fluctuations(band2_problems, 2, 1000, 1200)
+    print(f"Found {len(band2_regular)} regular problems in Band 2 range after filtering out special problems.")
+    band2_problems = select_problems_with_tag_balance(band2_regular, problems_per_band[2], all_selected)
     selected_problems.extend([{"band": 2, "problem": p} for p in band2_problems])
+    all_selected.extend(band2_problems)
     
-    # Band 3 (Semi Finals): 8 problems rated 1200 (with some 1100 or 1300)
+    # Band 3 (Semi Finals): rated 1200 (unchanged)
     band3_regular = filter_problems_by_rating(all_problems, 1200, 1200)
-    band3_problems = select_problems_with_tag_balance(band3_regular, 8, band1_problems + band2_problems)
-    band3_problems = add_rating_fluctuations(band3_problems, 1, 1100, 1300)
+    print(f"Found {len(band3_regular)} regular problems in Band 3 range after filtering out special problems.")
+    band3_problems = select_problems_with_tag_balance(band3_regular, problems_per_band[3], all_selected)
     selected_problems.extend([{"band": 3, "problem": p} for p in band3_problems])
+    all_selected.extend(band3_problems)
     
-    # Band 4 (Finals): 3 problems with specific ratings
-    band4_problem1 = select_problems_with_tag_balance(
-        filter_problems_by_rating(all_problems, 800, 1000), 1, 
-        band1_problems + band2_problems + band3_problems
-    )
+    # Band 4 (Finals): rated 1300 (changed from 1300-1600)
+    if problems_per_band[4] > 0:
+        band4_regular = filter_problems_by_rating(all_problems, 1300, 1300)
+        print(f"Found {len(band4_regular)} regular problems in Band 4 range after filtering out special problems.")
+        band4_problems = select_problems_with_tag_balance(band4_regular, problems_per_band[4], all_selected)
+        selected_problems.extend([{"band": 4, "problem": p} for p in band4_problems])
+        all_selected.extend(band4_problems)
     
-    band4_problem2 = select_problems_with_tag_balance(
-        filter_problems_by_rating(all_problems, 1100, 1200), 1, 
-        band1_problems + band2_problems + band3_problems + band4_problem1
-    )
-    
-    band4_problem3 = select_problems_with_tag_balance(
-        filter_problems_by_rating(all_problems, 1300, 1400), 1, 
-        band1_problems + band2_problems + band3_problems + band4_problem1 + band4_problem2
-    )
-    
-    selected_problems.extend([{"band": 4, "problem": p} for p in band4_problem1 + band4_problem2 + band4_problem3])
+    # Band 5 (Grand Finals): rated 1400 (changed from 1600-1900)
+    if problems_per_band[5] > 0:
+        band5_regular = filter_problems_by_rating(all_problems, 1400, 1400)
+        print(f"Found {len(band5_regular)} regular problems in Band 5 range after filtering out special problems.")
+        band5_problems = select_problems_with_tag_balance(band5_regular, problems_per_band[5], all_selected)
+        selected_problems.extend([{"band": 5, "problem": p} for p in band5_problems])
     
     return selected_problems
 
@@ -202,12 +238,62 @@ def print_problem_set_summary(problem_set):
         # Print top 5 tags
         print("  Top tags:", ", ".join(f"{tag} ({count})" for tag, count in tag_counter.most_common(5)))
 
-if __name__ == "__main__":
-    # Set random seed for reproducibility (optional, remove for true randomness)
-    random.seed(time.time())
+def main():
+    parser = argparse.ArgumentParser(description="Generate a Codeforces tournament problem set")
+    parser.add_argument("--problems", type=int, help="Number of problems per band (same for all bands)")
+    parser.add_argument("--band1", type=int, help="Number of problems for Band 1")
+    parser.add_argument("--band2", type=int, help="Number of problems for Band 2")
+    parser.add_argument("--band3", type=int, help="Number of problems for Band 3")
+    parser.add_argument("--band4", type=int, help="Number of problems for Band 4")
+    parser.add_argument("--band5", type=int, help="Number of problems for Band 5")
+    parser.add_argument("--output", type=str, default="codeforces_tournament_problems.csv", 
+                        help="Output CSV filename")
+    parser.add_argument("--seed", type=int, help="Random seed for reproducibility")
     
-    problem_set = create_tournament_problem_set()
+    args = parser.parse_args()
+    
+    # Set random seed if provided
+    if args.seed:
+        random.seed(args.seed)
+    else:
+        random.seed(time.time())
+    
+    # Determine problems per band
+    problems_per_band = {
+        1: 20,  # Default for Band 1
+        2: 12,  # Default for Band 2
+        3: 8,   # Default for Band 3
+        4: 3,   # Default for Band 4
+        5: 3    # Default for Band 5
+    }
+    
+    # Override with command line arguments if provided
+    if args.problems:
+        # Use the same number for all bands
+        for band in problems_per_band:
+            problems_per_band[band] = args.problems
+    
+    # Individual band overrides take precedence
+    if args.band1:
+        problems_per_band[1] = args.band1
+    if args.band2:
+        problems_per_band[2] = args.band2
+    if args.band3:
+        problems_per_band[3] = args.band3
+    if args.band4:
+        problems_per_band[4] = args.band4
+    if args.band5:
+        problems_per_band[5] = args.band5
+    
+    print(f"Generating problem set with the following distribution:")
+    for band, count in problems_per_band.items():
+        print(f"Band {band}: {count} problems")
+    
+    problem_set = create_tournament_problem_set(problems_per_band)
     if problem_set:
         print("\nProblem Set Summary:")
         print_problem_set_summary(problem_set)
-        export_to_csv(problem_set)
+        export_to_csv(problem_set, args.output)
+
+if __name__ == "__main__":
+    main()
