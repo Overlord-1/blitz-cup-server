@@ -16,15 +16,15 @@ function App() {
                 <div className="relative z-10">
                     <Layout>
                         <Routes>
-                            <Route path="/" element={<div className="-mt-6">
-                                        <div className="bg-transparent rounded-lg shadow-sm">
-                                            <GetProblemLink />
-                                        </div>
-                                    </div>} />
+                            <Route path="/" element={<GetProblemLink />} />
                             <Route
                                 path="/match-details"
                                 element={
-                                    <Tree />
+                                    <div className="-mt-6">
+                                        <div className="bg-transparent rounded-lg shadow-sm">
+                                            <Tree />
+                                        </div>
+                                    </div>
                                 }
                             />
                         </Routes>
