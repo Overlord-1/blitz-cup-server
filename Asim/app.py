@@ -3,42 +3,15 @@ from flask_cors import CORS
 import requests
 import time
 import threading
-from kafka import KafkaProducer
-import json
 
 app = Flask(__name__)
-# Update CORS configuration
-CORS(app, resources={
-    r"/*": {
-        "origins": "*",
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
-    }
-})
-
+cors=CORS(app)
 
 # Dictionary to store active tracking threads, not just results
 tracking_threads = {}
 active_tracking = {}
 # New list to store winners information
 winners_list = []
-
-# Initialize Kafka producer
-producer = KafkaProducer(
-    bootstrap_servers=['localhost:9092'],
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
-
-def publish_to_kafka(match_id, winner):
-    try:
-        message = {
-            "match_id": match_id,
-            "winner": winner
-        }
-        producer.send('Results', value=message)
-        producer.flush()
-    except Exception as e:
-        print(f"Error publishing to Kafka: {str(e)}")
 
 def check_problem_solution(handle1, handle2, problem_id, tracking_id):
     """
@@ -108,30 +81,35 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
             if handle1_solved and handle2_solved:
                 # Both solved, compare times
                 if handle1_time < handle2_time:
-                    winner = handle1
+                    result = {
+                        "winner": handle1,
+                        "loser": handle2,
+                        "winner_time": handle1_time,
+                        "loser_time": handle2_time,
+                        "time_difference": handle2_time - handle1_time,
+                        "status": "both_solved",
+                        "match_id": tracking_id
+                    }
+                    # Add winner to the winners list
+                    winners_list.append({"match_id": tracking_id, "winner": handle1})
                 else:
-                    winner = handle2
-                
-                # Publish to Kafka instead of adding to winners_list
-                publish_to_kafka(tracking_id, winner)
-                
-                result = {
-                    "winner": winner,
-                    "loser": handle2 if winner == handle1 else handle1,
-                    "winner_time": handle1_time if winner == handle1 else handle2_time,
-                    "loser_time": handle2_time if winner == handle1 else handle1_time,
-                    "time_difference": abs(handle2_time - handle1_time),
-                    "status": "both_solved",
-                    "match_id": tracking_id
-                }
+                    result = {
+                        "winner": handle2,
+                        "loser": handle1,
+                        "winner_time": handle2_time,
+                        "loser_time": handle1_time,
+                        "time_difference": handle1_time - handle2_time,
+                        "status": "both_solved",
+                        "match_id": tracking_id
+                    }
+                    # Add winner to the winners list
+                    winners_list.append({"match_id": tracking_id, "winner": handle2})
                 active_tracking[tracking_id] = result
                 # Clean up
                 if tracking_id in tracking_threads:
                     del tracking_threads[tracking_id]
                 return result
             elif handle1_solved:
-                # Publish to Kafka
-                publish_to_kafka(tracking_id, handle1)
                 result = {
                     "winner": handle1,
                     "loser": handle2,
@@ -141,14 +119,14 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                     "message": f"{handle2} has not solved the problem yet",
                     "match_id": tracking_id
                 }
+                # Add winner to the winners list
+                winners_list.append({"match_id": tracking_id, "winner": handle1})
                 active_tracking[tracking_id] = result
                 # Clean up
                 if tracking_id in tracking_threads:
                     del tracking_threads[tracking_id]
                 return result
             elif handle2_solved:
-                # Publish to Kafka
-                publish_to_kafka(tracking_id, handle2)
                 result = {
                     "winner": handle2,
                     "loser": handle1,
@@ -158,6 +136,8 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                     "message": f"{handle1} has not solved the problem yet",
                     "match_id": tracking_id
                 }
+                # Add winner to the winners list
+                winners_list.append({"match_id": tracking_id, "winner": handle2})
                 active_tracking[tracking_id] = result
                 # Clean up
                 if tracking_id in tracking_threads:
@@ -399,26 +379,23 @@ def matches_completed():
             "message": f"An error occurred while retrieving completed matches: {str(e)}"
         }), 500
 
-# @app.route('/winners', methods=['GET'])
-# def get_winners():
-
-#     print("Winners List:", winners_list)
-#     """
-#     Returns an array of all winners.
-#     Each entry contains the match_id and winner handle.
-#     """
-#     try:
-#         return jsonify({
-#             "status": "success",
-#             "winners": winners_list
-#         })
-#     except Exception as e:
-#         return jsonify({
-#             "error": str(e),
-#             "status": "error",
-#             "message": f"An error occurred while retrieving winners list: {str(e)}"
-#         }), 500
+@app.route('/winners', methods=['GET'])
+def get_winners():
+    """
+    Returns an array of all winners.
+    Each entry contains the match_id and winner handle.
+    """
+    try:
+        return jsonify({
+            "status": "success",
+            "winners": winners_list
+        })
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
+            "status": "error",
+            "message": f"An error occurred while retrieving winners list: {str(e)}"
+        }), 500
 
 if __name__ == '__main__':
-    # Run without SSL for local development
-    app.run(host='0.0.0.0', port=5000, ssl_context=None)
+    app.run()
