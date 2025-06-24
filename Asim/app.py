@@ -3,15 +3,47 @@ from flask_cors import CORS
 import requests
 import time
 import threading
+import pika
+import json
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 app = Flask(__name__)
 cors=CORS(app)
+
+# RabbitMQ Configuration
+CLOUDAMQP_URL = os.getenv('CLOUDAMQP_URL')
+QUEUE_NAME = 'winners'
+
+def publish_to_rabbitmq(winner_data):
+    """Publish winner data to RabbitMQ"""
+    try:
+        # Parse AMQP URL and create connection parameters
+        parameters = pika.URLParameters(CLOUDAMQP_URL)
+        connection = pika.BlockingConnection(parameters)
+        channel = connection.channel()
+        
+        # Declare queue
+        channel.queue_declare(queue=QUEUE_NAME, durable=True)
+        
+        # Publish message
+        channel.basic_publish(
+            exchange='',
+            routing_key=QUEUE_NAME,
+            body=json.dumps(winner_data),
+            properties=pika.BasicProperties(
+                delivery_mode=2  # make message persistent
+            )
+        )
+        
+        connection.close()
+    except Exception as e:
+        print(f"Error publishing to RabbitMQ: {str(e)}")
 
 # Dictionary to store active tracking threads, not just results
 tracking_threads = {}
 active_tracking = {}
-# New list to store winners information
-winners_list = []
 
 def check_problem_solution(handle1, handle2, problem_id, tracking_id):
     """
@@ -90,8 +122,8 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                         "status": "both_solved",
                         "match_id": tracking_id
                     }
-                    # Add winner to the winners list
-                    winners_list.append({"match_id": tracking_id, "winner": handle1})
+                    # Publish winner to RabbitMQ
+                    publish_to_rabbitmq({"match_id": tracking_id, "winner": handle1})
                 else:
                     result = {
                         "winner": handle2,
@@ -102,8 +134,9 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                         "status": "both_solved",
                         "match_id": tracking_id
                     }
-                    # Add winner to the winners list
-                    winners_list.append({"match_id": tracking_id, "winner": handle2})
+                    # Publish winner to RabbitMQ
+                    publish_to_rabbitmq({"match_id": tracking_id, "winner": handle2})
+                
                 active_tracking[tracking_id] = result
                 # Clean up
                 if tracking_id in tracking_threads:
@@ -119,8 +152,8 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                     "message": f"{handle2} has not solved the problem yet",
                     "match_id": tracking_id
                 }
-                # Add winner to the winners list
-                winners_list.append({"match_id": tracking_id, "winner": handle1})
+                # Publish winner to RabbitMQ
+                publish_to_rabbitmq({"match_id": tracking_id, "winner": handle1})
                 active_tracking[tracking_id] = result
                 # Clean up
                 if tracking_id in tracking_threads:
@@ -136,8 +169,8 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                     "message": f"{handle1} has not solved the problem yet",
                     "match_id": tracking_id
                 }
-                # Add winner to the winners list
-                winners_list.append({"match_id": tracking_id, "winner": handle2})
+                # Publish winner to RabbitMQ
+                publish_to_rabbitmq({"match_id": tracking_id, "winner": handle2})
                 active_tracking[tracking_id] = result
                 # Clean up
                 if tracking_id in tracking_threads:
@@ -377,24 +410,6 @@ def matches_completed():
             "error": str(e),
             "status": "error",
             "message": f"An error occurred while retrieving completed matches: {str(e)}"
-        }), 500
-
-@app.route('/winners', methods=['GET'])
-def get_winners():
-    """
-    Returns an array of all winners.
-    Each entry contains the match_id and winner handle.
-    """
-    try:
-        return jsonify({
-            "status": "success",
-            "winners": winners_list
-        })
-    except Exception as e:
-        return jsonify({
-            "error": str(e),
-            "status": "error",
-            "message": f"An error occurred while retrieving winners list: {str(e)}"
         }), 500
 
 if __name__ == '__main__':

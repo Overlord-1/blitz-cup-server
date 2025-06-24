@@ -1,51 +1,51 @@
 import { Kafka } from 'kafkajs';
 import { supabase } from "../config/connectDB.js";
 
-// Initialize Kafka with retry configuration
-const kafka = new Kafka({
-  clientId: 'blitz-cup-server',
-  brokers: ['localhost:9092'],
-  retry: {
-    initialRetryTime: 100,
-    retries: 8
-  }
-});
+// // Initialize Kafka with retry configuration
+// const kafka = new Kafka({
+//   clientId: 'blitz-cup-server',
+//   brokers: ['localhost:9092'],
+//   retry: {
+//     initialRetryTime: 100,
+//     retries: 8
+//   }
+// });
 
-const consumer = kafka.consumer({ 
-  groupId: 'results-group',
-  retry: {
-    restartOnFailure: async (error) => {
-      console.error('Kafka consumer error:', error);
-      return true; // Always try to restart
-    }
-  }
-});
+// const consumer = kafka.consumer({ 
+//   groupId: 'results-group',
+//   retry: {
+//     restartOnFailure: async (error) => {
+//       console.error('Kafka consumer error:', error);
+//       return true; // Always try to restart
+//     }
+//   }
+// });
 
-// Start Kafka consumer with error handling
-const startKafkaConsumer = async () => {
-  try {
-    await consumer.connect();
-    await consumer.subscribe({ topic: 'Results', fromBeginning: true });
+// // Start Kafka consumer with error handling
+// const startKafkaConsumer = async () => {
+//   try {
+//     await consumer.connect();
+//     await consumer.subscribe({ topic: 'Results', fromBeginning: true });
 
-    await consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        try {
-          const matchData = JSON.parse(message.value.toString());
-          await updateMatchWinner(matchData.match_id, matchData.winner);
-        } catch (error) {
-          console.error('Error processing message:', error);
-        }
-      },
-    });
-  } catch (error) {
-    console.error('Failed to start Kafka consumer:', error);
-    // Attempt to reconnect after delay
-    setTimeout(startKafkaConsumer, 5000);
-  }
-};
+//     await consumer.run({
+//       eachMessage: async ({ topic, partition, message }) => {
+//         try {
+//           const matchData = JSON.parse(message.value.toString());
+//           await updateMatchWinner(matchData.match_id, matchData.winner);
+//         } catch (error) {
+//           console.error('Error processing message:', error);
+//         }
+//       },
+//     });
+//   } catch (error) {
+//     console.error('Failed to start Kafka consumer:', error);
+//     // Attempt to reconnect after delay
+//     setTimeout(startKafkaConsumer, 5000);
+//   }
+// };
 
-// Start the Kafka consumer when the server starts
-startKafkaConsumer().catch(console.error);
+// // Start the Kafka consumer when the server starts
+// startKafkaConsumer().catch(console.error);
 
 async function updateMatchWinner(matchId, winnerHandle) {
   try {
