@@ -28,7 +28,7 @@ tracking_matches = {}
 active_tracking = {}
 
 
-def publish_to_rabbitmq(winner_data):
+def publish_to_winner_queue(winner_data):
     """Publish winner data to RabbitMQ"""
     try:
         # Parse AMQP URL and create connection parameters
@@ -54,6 +54,50 @@ def publish_to_rabbitmq(winner_data):
         connection.close()
     except Exception as e:
         print(f"Error publishing to RabbitMQ: {str(e)}")
+
+
+def subscribe_from_match_queue():
+    try:
+        connection= pika.BlockingConnection(pika.URLParameters(CLOUDAMQP_URL))
+        channel=connection.channel()
+
+        matches_queue='matches'
+
+        channel.queue_declare(queue=matches_queue, durable=True)
+
+        channel.basic_consume(
+            queue=matches_queue, on_message_callback=callback, auto_ack=True
+        )
+
+        print('Waiting for messages in match queue. To exit press CTRL+C')
+
+        channel.start_consuming()
+
+    except Exception as e:
+        print('Error', str(e))
+
+
+def callback(ch, method, properties, body):
+    print("Received message:", body)
+
+    data=json.loads(body)
+    print(data)
+
+    match_id=data.get("match_id")
+    match_number=data.get("match_number")
+    handle1=data.get("p1")
+    handle2=data.get("p2")
+    problem_id=data.get("cf_question")
+    print(match_id, match_number, handle1, handle2, problem_id)
+
+    # Process the message here
+
+    new_match=Matches(match_id, handle1, handle2, problem_id)
+    tracking_matches[match_id] = new_match
+    start_tracking(match_id, match_number, handle1, handle2, problem_id)
+
+# Start Subscriber
+threading.Thread(target=subscribe_from_match_queue, daemon=True).start()
 
 def check_problem_solution(handle1, handle2, problem_id, match_id, match_number):
     """
@@ -133,7 +177,7 @@ def check_problem_solution(handle1, handle2, problem_id, match_id, match_number)
                         "match_id": match_number
                     }
                     # Publish winner to RabbitMQ
-                    publish_to_rabbitmq({"match_id": match_id, "winner": handle1})
+                    publish_to_winner_queue({"match_id": match_id, "winner": handle1})
                     next_match(match_number, handle1)
                 else:
                     result = {
@@ -146,7 +190,7 @@ def check_problem_solution(handle1, handle2, problem_id, match_id, match_number)
                         "match_id": match_number
                     }
                     # Publish winner to RabbitMQ
-                    publish_to_rabbitmq({"match_id": match_id, "winner": handle2})
+                    publish_to_winner_queue({"match_id": match_id, "winner": handle2})
                     next_match(match_number, handle2)
 
                 active_tracking[match_number] = result
@@ -165,7 +209,7 @@ def check_problem_solution(handle1, handle2, problem_id, match_id, match_number)
                     "match_id": match_number
                 }
                 # Publish winner to RabbitMQ
-                publish_to_rabbitmq({"match_id": match_id, "winner": handle1})
+                publish_to_winner_queue({"match_id": match_id, "winner": handle1})
                 next_match(match_number, handle1)
                 active_tracking[match_number] = result
                 # Clean up
@@ -183,7 +227,7 @@ def check_problem_solution(handle1, handle2, problem_id, match_id, match_number)
                     "match_id": match_number
                 }
                 # Publish winner to RabbitMQ
-                publish_to_rabbitmq({"match_id": match_id, "winner": handle2})
+                publish_to_winner_queue({"match_id": match_id, "winner": handle2})
                 next_match(match_number, handle2)
                 active_tracking[match_number] = result
                 # Clean up
@@ -283,11 +327,11 @@ def start_tracking(match_id, match_number, handle1, handle2, problem_id):
             "message": f"Now tracking {handle1} vs {handle2} for problem {problem_id}"
         })
     except Exception as e:
-        return jsonify({
+        return {
             "error": str(e),
             "status": "error",
             "message": f"An error occurred: {str(e)}"
-        }), 500
+        }, 500
 
 @app.route('/check_status/<tracking_id>', methods=['GET'])
 def check_status(tracking_id):

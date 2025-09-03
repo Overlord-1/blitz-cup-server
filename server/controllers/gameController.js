@@ -1,7 +1,7 @@
 // import { Kafka } from 'kafkajs';
 import { supabase } from "../config/connectDB.js";
-import {getSocketIO} from '../config/connectSocket.js';
-import {getRandomQuestion} from '../controllers/pollingService.js';
+import { getSocketIO } from '../config/connectSocket.js';
+import { getRandomQuestion } from '../controllers/pollingService.js';
 import amqp from 'amqplib';
 import axios from 'axios';
 
@@ -56,30 +56,31 @@ dotenv.config();
 // startKafkaConsumer().catch(console.error);
 
 export async function startSubscriber() {
-  const connect= await amqp.connect(process.env.CLOUDAMQP_URL+`?heartbeat=60`);
-  const channel= await connect.createChannel();
+  const connect = await amqp.connect(process.env.CLOUDAMQP_URL + `?heartbeat=60`);
+  const channel = await connect.createChannel();
 
-  const QUEUE_NAME='winners';
+  const QUEUE_NAME = 'winners';
 
-  const q= await channel.assertQueue(QUEUE_NAME, { exclusive: false });
+  const q = await channel.assertQueue(QUEUE_NAME, { exclusive: false });
 
   console.log('Waiting for messages');
 
-  channel.consume(q.queue, msg=>{
+  channel.consume(q.queue, msg => {
     if (msg.content) {
       updateMatchWinner(JSON.parse(msg.content.toString()));
       console.log('Received message from Queue');
     }
-  }, {noAck: true});
+  }, { noAck: true });
 }
 
 async function updateMatchWinner(newData) {
 
   console.log('updating winner', newData);
 
+
+
   try {
     const { match_id, winner } = newData;
-    console.log(newData)
     const { data: userData } = await supabase
       .from('users')
       .select('id')
@@ -91,10 +92,10 @@ async function updateMatchWinner(newData) {
       return;
     }
 
-    // Get the current match details
+    // Get the current match details complete 
     const { data: matchData } = await supabase
       .from('matches')
-      .select('match_number, level')
+      .select('*')
       .eq('id', match_id)
       .single();
 
@@ -104,44 +105,136 @@ async function updateMatchWinner(newData) {
       .update({ winner: userData.id })
       .eq('id', match_id);
 
+
+
     // Calculate next match number
     const nextMatchNumber = Math.floor(matchData.match_number / 2);
 
+
+    if (matchData.match_number%2 === 1) {
+      await supabase
+        .from('matches')
+        .update({
+          p1: userData.id,
+        })
+        .eq('match_number', nextMatchNumber);
+    }
+    else {
+      await supabase
+        .from('matches')
+        .update({
+          p2: userData.id,
+        })
+        .eq('match_number', nextMatchNumber);
+    }
+
+
+
     // Get the next match details
-    const { data: nextMatchData } = await supabase
+    // const { data: nextMatchData } = await supabase
+    //   .from('matches')
+    //   .select('p1, p2, level')
+    //   .eq('match_number', nextMatchNumber)
+    //   .single();
+
+
+    const { data: details } = await supabase
       .from('matches')
-      .select('p1, p2, level')
+      .select('p1, p2, level,id')
       .eq('match_number', nextMatchNumber)
       .single();
 
-    // Get a random question for the next match
-    const questionId = await getRandomQuestion(nextMatchData.level);
-
-    // Determine which player slot to update
-    const updateField = !nextMatchData.p1 ? 'p1' : 'p2';
-
     // Update the next match
-    await supabase
-      .from('matches')
-      .update({ 
-        [updateField]: userData.id,
-        cf_question: questionId
-      })
-      .eq('match_number', nextMatchNumber);
 
-      const io = getSocketIO();
-      if (io) {
-              console.log(match_id, userData.id);
-              const new_winner=userData.id;
-              io.emit('new_winner', { match_id, new_winner });
-      } else {
-            console.error('Socket.IO is not initialized');
+
+
+
+    const io = getSocketIO();
+    if (io) {
+      console.log(match_id, userData.id);
+      const new_winner = userData.id;
+      io.emit('new_winner', { match_id, new_winner });
+    } else {
+      console.error('Socket.IO is not initialized');
+    }
+
+
+    console.log('Details:', details);
+    if (details.p1 && details.p2) {
+
+      // make a new question
+      const questionId = await getRandomQuestion(details.level);
+
+      // id-> name 
+
+      // name  of user 1
+      const { data: user1 } = await supabase
+        .from('users')
+        .select('cf_handle')
+        .eq('id', details.p1)
+        .single();
+
+
+      // name of user2 
+      const { data: user2 } = await supabase
+        .from('users')
+        .select('cf_handle')
+        .eq('id', details.p2)
+        .single();
+
+      // link of question
+      const { data: question } = await supabase
+        .from('problemset')
+        .select('link')
+        .eq('id', questionId)
+        .single();
+
+      // console.log('Winner cf_handle:', user?.cf_handle);
+      // console.log('Question link:', question?.link);
+
+
+      await supabase
+        .from('matches')
+        .update({
+          p1: details.p1,
+          p2: details.p2,
+          cf_question: questionId
+        })
+        .eq('match_number', nextMatchNumber);
+
+      // final match data
+      const finalNewMatchData = {
+        p1: user1.cf_handle,
+        p2: user2.cf_handle,
+        match_id: details.id,
+        match_number: nextMatchNumber,
+        level: details.level,
+        cf_question: question.link
       }
+      // publish
+      console.log('Update sent through socket');
+      console.log('Publishing to match queue:', finalNewMatchData);
+      publish_to_match_queue(finalNewMatchData)
 
-    console.log('Update sent through socket');
+    }
+
 
   } catch (error) {
     console.error('Error in updateMatchWinner:', error);
+  }
+}
+
+const publish_to_match_queue = async (match_data) => {
+  try {
+    const connection = await amqp.connect(process.env.CLOUDAMQP_URL + `?heartbeat=60`);
+    const channel = await connection.createChannel();
+
+    await channel.assertQueue('matches', { durable: true });
+    channel.sendToQueue('matches', Buffer.from(JSON.stringify(match_data)), { persistent: true });
+
+    console.log('Match data published to queue');
+  } catch (error) {
+    console.error('Error publishing to match queue:', error);
   }
 }
 
@@ -161,7 +254,7 @@ export const getTournamentStatus = async (req, res) => {
   }
 };
 
-const  updateMatchIds = async () => {
+const updateMatchIds = async () => {
   try {
     const { data: matches, error } = await supabase
       .from('matches')
@@ -251,7 +344,7 @@ export const startgame = async (req, res) => {
 
     // First, insert the tournament structure
     const { error: structureError } = await supabase.rpc('initialize_tournament_structure');
-    
+
     if (structureError) {
       throw structureError;
     }
@@ -282,7 +375,7 @@ export const startgame = async (req, res) => {
     }
 
     const shuffledUsers = users.sort(() => Math.random() - 0.5);
-    
+
     // Get matches for current level
     const { data: roundMatches, error: matchError } = await supabase
       .from("matches")
@@ -335,11 +428,11 @@ export const startgame = async (req, res) => {
 
     res.status(200).send({ message: "Successfully initialized tournament" });
 
-    const {data : match_data}= await supabase
-    .from('matches')
-    .select('*')
-    .neq('level', 1)
-    .order('match_number', { ascending: true });
+    const { data: match_data } = await supabase
+      .from('matches')
+      .select('*')
+      .neq('level', 1)
+      .order('match_number', { ascending: true });
 
     const start_status = await axios.post(`${process.env.WORKER_URL}/begin_tournament`, { matches: match_data })
       .then(response => {
