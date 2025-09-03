@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const Layout = ({ children }) => {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const location = useLocation();
     
     const navItems = [
@@ -31,36 +32,69 @@ const Layout = ({ children }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="max-w-screen mx-auto px-4 py-6"
+            className="max-w-screen mx-auto px-2 sm:px-4 py-3 sm:py-6"
         >
-            <nav>
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 xl:px-40">
+            <nav className="relative">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 px-2 xl:px-40">
                     <motion.h1 
                         initial={{ x: -20 }}
                         animate={{ x: 0 }}
                         transition={{ type: "spring", stiffness: 300 }}
-                        className="text-5xl font-semibold font-electrolize after:content-[''] relative after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-gradient-to-r after:from-[#3ECF8E] after:to-[#3AC489] after:rounded-md"
+                        className="text-3xl sm:text-5xl font-semibold font-electrolize after:content-[''] relative after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-gradient-to-r after:from-[#3ECF8E] after:to-[#3AC489] after:rounded-md"
                     >
-                        <span className="bg-gradient-to-tr from-[#057240] from-35% to-[#3AC489] bg-clip-text text-transparent xl:text-8xl xl:text-center">
+                        <span className="bg-gradient-to-tr from-[#057240] from-35% to-[#3AC489] bg-clip-text text-transparent lg:text-6xl xl:text-8xl xl:text-center">
                             Blitz Cup
                         </span>
                     </motion.h1>
+
+                    {/* Mobile Menu Button */}
+                    <button 
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="sm:hidden fixed top-4 right-4 z-50 p-2 rounded-lg bg-[#121212] border border-[#1C1C1C]"
+                    >
+                        <svg 
+                            className="w-6 h-6 text-[#3ECF8E]" 
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor"
+                        >
+                            {isMobileMenuOpen ? (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            ) : (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                            )}
+                        </svg>
+                    </button>
+
+                    {/* Navigation Items */}
                     <motion.div 
                         initial={{ x: 20 }}
                         animate={{ x: 0 }}
                         transition={{ type: "spring", stiffness: 300 }}
-                        className="flex gap-4 bg-[#121212] p-1 rounded-lg border border-[#1C1C1C] shadow-xl"
+                        className={`
+                            ${isMobileMenuOpen ? 'flex' : 'hidden'} 
+                            sm:flex flex-col sm:flex-row
+                            fixed sm:relative top-0 right-0 
+                            h-screen sm:h-auto w-64 sm:w-auto
+                            pt-16 sm:pt-0
+                            bg-[#0A0A0A] sm:bg-[#121212] 
+                            border-l border-[#1C1C1C] sm:border-none
+                            sm:rounded-lg sm:shadow-xl
+                            z-40 sm:z-auto
+                            transition-all duration-300
+                        `}
                     >
                         {navItems.map(({ path, label, icon }) => (
                             <motion.div
                                 key={path}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
+                                onClick={() => setIsMobileMenuOpen(false)}
                             >
                                 <Link
                                     to={path}
                                     className={`
-                                        flex items-center gap-2 px-4 py-2 text-md rounded-md transition-all duration-200
+                                        flex items-center gap-2 px-4 py-3 sm:py-2 text-md rounded-md transition-all duration-200
                                         ${location.pathname === path 
                                             ? 'bg-gradient-to-tr from-[#057240] from-35% to-[#3AC489] text-[#0A0A0A] font-medium shadow-lg shadow-[#3ECF8E]/10' 
                                             : 'text-[#6B7280] hover:text-[#E5E7EB] hover:bg-[#1C1C1C]'
@@ -68,17 +102,30 @@ const Layout = ({ children }) => {
                                     `}
                                 >
                                     {icon}
-                                    {label}
+                                    <span className="text-base sm:text-sm md:text-base">{label}</span>
                                 </Link>
                             </motion.div>
                         ))}
                     </motion.div>
                 </div>
             </nav>
+
+            {/* Overlay for mobile menu */}
+            {isMobileMenuOpen && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 sm:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
             <motion.main
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
+                className="mt-4 sm:mt-6"
             >
                 {children}
             </motion.main>

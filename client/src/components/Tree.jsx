@@ -20,6 +20,7 @@ const Tree = () => {
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+    const [touchStart, setTouchStart] = useState(null);
 
     const {socket, socketConnected}=useContext(SocketContext)
 
@@ -267,10 +268,50 @@ const Tree = () => {
         };
     }, [scale]);
 
+    // Add touch handlers for mobile
+    const handleTouchStart = (e) => {
+        if (e.touches.length === 1) {
+            setIsDragging(true);
+            setTouchStart({
+                x: e.touches[0].clientX - position.x,
+                y: e.touches[0].clientY - position.y
+            });
+        } else if (e.touches.length === 2) {
+            // Handle pinch zoom
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            setTouchStart({ ...touchStart, dist });
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        if (e.touches.length === 1 && isDragging) {
+            setPosition({
+                x: e.touches[0].clientX - touchStart.x,
+                y: e.touches[0].clientY - touchStart.y
+            });
+        } else if (e.touches.length === 2 && touchStart?.dist) {
+            const newDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const delta = newDist - touchStart.dist;
+            const newScale = Math.min(Math.max(0.3, scale + (delta * 0.01)), 2);
+            setScale(newScale);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        setIsDragging(false);
+        setTouchStart(null);
+    };
+
     if (error) {
         return (
-            <div className="animate-fadeIn mx-auto max-w-2xl">
-                <div className="rounded-xl border border-red-500/10 bg-red-500/5 p-6 backdrop-blur-sm">
+            <div className="animate-fadeIn mx-auto max-w-2xl p-4">
+                <div className="rounded-xl border border-red-500/10 bg-red-500/5 p-4 md:p-6 backdrop-blur-sm">
                     <div className="flex items-center gap-3 text-red-400">
                         <svg className="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -305,21 +346,19 @@ const Tree = () => {
 
     if (!tournamentStatus || !participants) {
         return (
-            <div className="flex flex-col items-center text-center justify-center min-h-[400px] w-full mx-auto px-4 animate-fadeIn">
-                <div className="w-3/5 rounded-xl border border-[#3ECF8E]/10 bg-[#3ECF8E]/[0.02] p-8 backdrop-blur-sm">
-                    <h2 className="text-5xl 3xl:text-8xl font-semibold text-[#3ECF8E] mb-2">Initialize Tournament</h2>
-                    <p className="text-xl 3xl:text-6xl text-[#6B7280] mb-2">Start the tournament to generate brackets and begin matches.</p>
+            <div className="flex flex-col items-center text-center justify-center min-h-[400px] w-full mx-auto px-2 md:px-4 animate-fadeIn">
+                <div className="w-full md:w-3/5 rounded-xl border border-[#3ECF8E]/10 bg-[#3ECF8E]/[0.02] p-4 md:p-8 backdrop-blur-sm">
+                    <h2 className="text-3xl md:text-5xl 3xl:text-8xl font-semibold text-[#3ECF8E] mb-2">Initialize Tournament</h2>
+                    <p className="text-lg md:text-xl 3xl:text-6xl text-[#6B7280] mb-2">Start the tournament to generate brackets and begin matches.</p>
                     <button
                         onClick={initializeTournament}
                         disabled={loading || isAnimating}
-                        className={`
-                            w-2/5 px-4 py-2.5 rounded-lg text-xl 3xl:text-6xl font-medium
+                        className="w-full md:w-2/5 px-4 py-2.5 rounded-lg text-lg md:text-xl 3xl:text-6xl font-medium
                             transition-all duration-200 cursor-pointer mt-4
                             ${loading || isAnimating
                                 ? 'bg-[#1C1C1C] text-[#6B7280] cursor-not-allowed'
                                 : 'bg-[#3ECF8E] text-[#0A0A0A] hover:bg-[#3AC489] hover:shadow-lg hover:shadow-[#3ECF8E]/10'
-                            }
-                        `}
+                            }"
                     >
                         {loading ? 'Initializing...' : 'Start Tournament'}
                     </button>
@@ -329,10 +368,17 @@ const Tree = () => {
     }
 
     return (
-        <div className='relative w-full h-[calc(100vh-7rem)] overflow-hidden'>
-            <button onClick={resetTournament} className='cursor-pointer'> Reset Tournament</button>
-            {/* Zoom Controls */}
-            <div className="absolute top-4 right-4 z-20 flex gap-2">
+        <div className='relative w-full h-[calc(100vh-4rem)] md:h-[calc(100vh-7rem)] overflow-hidden'>
+            {/* Reset Tournament button */}
+            <button 
+                onClick={resetTournament} 
+                className='absolute top-4 left-4 z-20 px-3 py-1.5 bg-red-500/10 text-red-400 rounded-md hover:bg-red-500/20 transition-all duration-200'
+            >
+                Reset Tournament
+            </button>
+
+            {/* Zoom Controls - now in bottom center for mobile */}
+            <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-2 bg-[#1C1C1C]/80 p-2 rounded-lg backdrop-blur-sm md:absolute md:bottom-auto md:left-auto md:transform-none md:top-4 md:right-4">
                 <button
                     onClick={() => setScale(prev => Math.min(prev + 0.3, 2))}
                     className="p-2 bg-[#3ECF8E]/10 rounded-lg hover:bg-[#3ECF8E]/20"
@@ -361,11 +407,14 @@ const Tree = () => {
             
             <div
                 id="bracket-container"
-                className="w-full h-full flex justify-center items-center cursor-grab active:cursor-grabbing"
+                className="w-full h-full flex justify-center items-center cursor-grab active:cursor-grabbing touch-none"
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
             >
                 <div 
                     style={{
