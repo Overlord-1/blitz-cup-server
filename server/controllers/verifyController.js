@@ -12,14 +12,13 @@ async function verifyController(handle) {
     }
 }
 
-export const verifySubmissions = async (req, res) => {
-    const { matchId } = req.body;
+export const verifySubmissions = async (matchId) => {
     console.log("Received matchId:", matchId);
 
     if (!matchId) {
-        return res.status(400).json({ 
+        return { 
             message: 'Match ID is required' 
-        });
+        };
     }
 
     try {
@@ -49,10 +48,11 @@ export const verifySubmissions = async (req, res) => {
         const questionId = match.problem?.question_id;
 
         if (!handle1 || !handle2 || !questionId) {
-            return res.status(404).json({
+            console.error("Missing data:", { handle1, handle2, questionId });
+            return {
                 message: 'Required data not found',
                 debug: { handle1, handle2, questionId }
-            });
+            };
         }
 
         const [submissions1, submissions2] = await Promise.all([
@@ -71,30 +71,34 @@ export const verifySubmissions = async (req, res) => {
         );
 
         if (handle1Solved || handle2Solved) {
-            return res.status(400).json({
-                message: 'One or both users have already solved this problem'
-            });
+            console.error("Submission already exists:", { handle1Solved, handle2Solved });
+            return {
+                message: 'One or both users have already solved this problem',
+                status: false
+            };
         }
 
-        return res.status(200).json({
-            message: 'Proceed with the contest'
-        });
+        return {
+            message: 'Proceed with the contest',
+            status: true
+        };
 
     } catch (error) {
         console.error('Error in verifySubmissions:', error);
-        return res.status(500).json({
-            message: 'Internal server error'
-        });
+        return {
+            message: 'Internal server error',
+            status: false
+        };
     }
 };
 
-export const changeQuestion = async (req, res) => {
-    const { matchId } = req.body;
+export const changeQuestion = async (matchId) => {
 
     if (!matchId) {
-        return res.status(400).json({
-            message: 'Match ID is required'
-        });
+        return {
+            message: 'Match ID is required',
+            status: false
+        };
     }
 
     try {
@@ -106,9 +110,9 @@ export const changeQuestion = async (req, res) => {
             .single();
 
         if (matchError || !match) {
-            return res.status(404).json({
+            return {
                 message: 'Match not found'
-            });
+            };
         }
 
         const oldQuestionId = match.cf_question;
@@ -124,9 +128,10 @@ export const changeQuestion = async (req, res) => {
             .single();
 
         if (questionError || !newQuestion) {
-            return res.status(404).json({
-                message: 'No unused questions available in the same difficulty band'
-            });
+            return {
+                message: 'No unused questions available in the same difficulty band',
+                status: false
+            };
         }
 
         // Update match with new question
@@ -151,16 +156,17 @@ export const changeQuestion = async (req, res) => {
             .update({ used: true })
             .eq('id', newQuestion.id);
 
-        return res.status(200).json({
+        return {
             message: 'Question changed successfully',
             newQuestionId: newQuestion.id
-        });
+        };
 
     } catch (error) {
         console.error('Error in changeQuestion:', error);
-        return res.status(500).json({
-            message: 'Internal server error'
-        });
+        return {
+            message: 'Internal server error',
+            status: false
+        };
     }
 };
 

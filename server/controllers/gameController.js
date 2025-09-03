@@ -4,6 +4,7 @@ import { getSocketIO } from '../config/connectSocket.js';
 import { getRandomQuestion } from '../controllers/pollingService.js';
 import amqp from 'amqplib';
 import axios from 'axios';
+import { verifySubmissions, changeQuestion } from "./verifyController.js";
 
 import dotenv from 'dotenv';
 
@@ -128,8 +129,6 @@ async function updateMatchWinner(newData) {
         .eq('match_number', nextMatchNumber);
     }
 
-
-
     // Get the next match details
     // const { data: nextMatchData } = await supabase
     //   .from('matches')
@@ -146,9 +145,6 @@ async function updateMatchWinner(newData) {
 
     // Update the next match
 
-
-
-
     const io = getSocketIO();
     if (io) {
       console.log(match_id, userData.id);
@@ -164,8 +160,8 @@ async function updateMatchWinner(newData) {
 
       // make a new question
       const questionId = await getRandomQuestion(details.level);
-
-      // id-> name 
+      console.log(questionId);
+      // id-> name
 
       // name  of user 1
       const { data: user1 } = await supabase
@@ -182,25 +178,57 @@ async function updateMatchWinner(newData) {
         .eq('id', details.p2)
         .single();
 
-      // link of question
-      const { data: question } = await supabase
-        .from('problemset')
-        .select('link')
-        .eq('id', questionId)
-        .single();
+       // link of question
+      await supabase
+        .from('matches')
+        .update({ cf_question: questionId })
+        .eq('id', details.id);
+
+      let finalNewQuestionId_temp;
+      const maxRetries = 100;
+      const retryDelay = 500; // 0.5 second
+
+      const findValidQuestion = async (matchId, attempts = 0) => {
+        if (attempts >= maxRetries) {
+          console.log('Max retries reached, using last attempted question');
+          return finalNewQuestionId_temp;
+        }
+
+        const verifyResult = await verifySubmissions(matchId);
+        if (verifyResult.status === true) {
+          return finalNewQuestionId_temp;
+        }
+
+        const changeResult = await changeQuestion(matchId);
+        finalNewQuestionId_temp = changeResult.newQuestionId;
+        console.log(`Attempt ${attempts + 1}: Changing question to:`, finalNewQuestionId_temp);
+
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return findValidQuestion(matchId, attempts + 1);
+      };
+
+      finalNewQuestionId_temp = await findValidQuestion(details.id);
+      const finalNewQuestionId = finalNewQuestionId_temp ? finalNewQuestionId_temp : questionId;
 
       // console.log('Winner cf_handle:', user?.cf_handle);
       // console.log('Question link:', question?.link);
 
+      // console.log(question.link);
 
       await supabase
         .from('matches')
         .update({
           p1: details.p1,
           p2: details.p2,
-          cf_question: questionId
+          // cf_question: question.link
         })
         .eq('match_number', nextMatchNumber);
+
+      const { data: latest_question } = await supabase
+        .from('problemset')
+        .select('link')
+        .eq('id', finalNewQuestionId)
+        .single();
 
       // final match data
       const finalNewMatchData = {
@@ -209,7 +237,7 @@ async function updateMatchWinner(newData) {
         match_id: details.id,
         match_number: nextMatchNumber,
         level: details.level,
-        cf_question: question.link
+        cf_question: latest_question.link
       }
       // publish
       console.log('Update sent through socket');

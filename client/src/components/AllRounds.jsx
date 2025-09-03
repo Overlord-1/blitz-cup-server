@@ -75,7 +75,7 @@ const AllRounds = ({ size, desc, matches=[], level, startIndex, participants }) 
                             variants={item}
                             whileHover={{ scale: 1.02 }}
                             transition={{ type: "spring", stiffness: 300 }}
-                            className="flex flex-row-reverse relative mt-12 w-[450px] xl:w-[600px] bg-[#121212] rounded-xl overflow-hidden"
+                            className="flex flex-row-reverse relative mt-12 h-28 w-[450px] xl:w-[800px] bg-[#121212] rounded-xl overflow-hidden"
                         >
                             <div className="flex flex-row-reverse relative w-full">
                                 {/* Player 1 */}
@@ -106,7 +106,7 @@ const AllRounds = ({ size, desc, matches=[], level, startIndex, participants }) 
 
                                 {/* Separator */}
                                 <div className="flex items-center justify-center px-6 bg-[#1C1C1C] text-[#6B7280] font-medium text-2xl xl:text-3xl">
-                                    VS
+                                    V/S
                                 </div>
 
                                 {/* Player 2 */}
