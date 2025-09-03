@@ -206,6 +206,7 @@ const GetProblemLink = () => {
                                 }}
                                 onFocus={() => setShowSuggestions(true)}
                                 placeholder="Select or type match ID"
+                                autoComplete='off'
                                 className="w-full px-3 py-2 pl-9 bg-[#1C1C1C] border border-[#3ECF8E]/20 text-[#E5E7EB] rounded-md focus:outline-none focus:ring-2 focus:ring-[#3ECF8E] focus:border-[#3ECF8E]"
                             />
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#6B7280]" />

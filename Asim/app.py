@@ -16,6 +16,18 @@ cors=CORS(app)
 CLOUDAMQP_URL = os.getenv('CLOUDAMQP_URL')
 QUEUE_NAME = 'winners'
 
+class Matches:
+    def __init__(self, match_id, handle1, handle2, problem_id):
+        self.match_id = match_id
+        self.handle1 = handle1
+        self.handle2 = handle2
+        self.problem_id = problem_id
+
+# Dictionary to store active tracking threads, not just results
+tracking_matches = {}
+active_tracking = {}
+
+
 def publish_to_rabbitmq(winner_data):
     """Publish winner data to RabbitMQ"""
     try:
@@ -36,16 +48,14 @@ def publish_to_rabbitmq(winner_data):
                 delivery_mode=2  # make message persistent
             )
         )
+
+        print('Message published to RabbitMQ')
         
         connection.close()
     except Exception as e:
         print(f"Error publishing to RabbitMQ: {str(e)}")
 
-# Dictionary to store active tracking threads, not just results
-tracking_threads = {}
-active_tracking = {}
-
-def check_problem_solution(handle1, handle2, problem_id, tracking_id):
+def check_problem_solution(handle1, handle2, problem_id, match_id, match_number):
     """
     Poll Codeforces API to check which user solves a problem first.
     Only checks the latest submission from each user.
@@ -72,7 +82,7 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
         
         # Track if this thread should stop
         should_stop = threading.Event()
-        tracking_threads[tracking_id] = should_stop
+        tracking_matches[match_number] = should_stop
         
         while not should_stop.is_set():
             # Check first handle
@@ -120,10 +130,11 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                         "loser_time": handle2_time,
                         "time_difference": handle2_time - handle1_time,
                         "status": "both_solved",
-                        "match_id": tracking_id
+                        "match_id": match_number
                     }
                     # Publish winner to RabbitMQ
-                    publish_to_rabbitmq({"match_id": tracking_id, "winner": handle1})
+                    publish_to_rabbitmq({"match_id": match_id, "winner": handle1})
+                    next_match(match_number, handle1)
                 else:
                     result = {
                         "winner": handle2,
@@ -132,15 +143,16 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                         "loser_time": handle1_time,
                         "time_difference": handle1_time - handle2_time,
                         "status": "both_solved",
-                        "match_id": tracking_id
+                        "match_id": match_number
                     }
                     # Publish winner to RabbitMQ
-                    publish_to_rabbitmq({"match_id": tracking_id, "winner": handle2})
-                
-                active_tracking[tracking_id] = result
+                    publish_to_rabbitmq({"match_id": match_id, "winner": handle2})
+                    next_match(match_number, handle2)
+
+                active_tracking[match_number] = result
                 # Clean up
-                if tracking_id in tracking_threads:
-                    del tracking_threads[tracking_id]
+                if match_number in tracking_matches:
+                    del tracking_matches[match_number]
                 return result
             elif handle1_solved:
                 result = {
@@ -150,14 +162,15 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                     "loser_time": None,
                     "status": "one_solved",
                     "message": f"{handle2} has not solved the problem yet",
-                    "match_id": tracking_id
+                    "match_id": match_number
                 }
                 # Publish winner to RabbitMQ
-                publish_to_rabbitmq({"match_id": tracking_id, "winner": handle1})
-                active_tracking[tracking_id] = result
+                publish_to_rabbitmq({"match_id": match_id, "winner": handle1})
+                next_match(match_number, handle1)
+                active_tracking[match_number] = result
                 # Clean up
-                if tracking_id in tracking_threads:
-                    del tracking_threads[tracking_id]
+                if match_number in tracking_matches:
+                    del tracking_matches[match_number]
                 return result
             elif handle2_solved:
                 result = {
@@ -167,14 +180,15 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                     "loser_time": None,
                     "status": "one_solved",
                     "message": f"{handle1} has not solved the problem yet",
-                    "match_id": tracking_id
+                    "match_id": match_number
                 }
                 # Publish winner to RabbitMQ
-                publish_to_rabbitmq({"match_id": tracking_id, "winner": handle2})
-                active_tracking[tracking_id] = result
+                publish_to_rabbitmq({"match_id": match_id, "winner": handle2})
+                next_match(match_number, handle2)
+                active_tracking[match_number] = result
                 # Clean up
-                if tracking_id in tracking_threads:
-                    del tracking_threads[tracking_id]
+                if match_number in tracking_matches:
+                    del tracking_matches[match_number]
                 return result
             
             # Wait before polling again
@@ -184,31 +198,54 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
             "error": str(e),
             "status": "error",
             "message": f"An error occurred while tracking: {str(e)}",
-            "match_id": tracking_id
+            "match_id": match_number
         }
-        active_tracking[tracking_id] = result
+        active_tracking[match_number] = result
         # Clean up
-        if tracking_id in tracking_threads:
-            del tracking_threads[tracking_id]
+        if match_number in tracking_matches:
+            del tracking_matches[match_number]
         return result
+    
+def next_match(match_number, handle):
+    next_match_number=match_number//2
 
-@app.route('/start_tracking', methods=['POST'])
-def start_tracking():
-    try:
-        data = request.json
-        handle1 = data.get('handle1')
-        handle2 = data.get('handle2')
-        problem_id = data.get('problem_id')
-        match_id = data.get('match_id')  # Get the match_id from request
+    if next_match_number in tracking_matches:
+        if next_match_number & 1:
+            tracking_matches[next_match_number].handle1 = handle
+        else:
+            tracking_matches[next_match_number].handle2 = handle
+    else:
+        if next_match_number & 1:
+            tracking_matches[next_match_number] = Matches(None, handle, None, None)
+        else:
+            tracking_matches[next_match_number] = Matches(None, None, handle, None)
+
+@app.route('/begin_tournament', methods=['GET', 'POST'])
+def begin_tournament():
+    matches_list = request.json.get('matches', [])
+    for match in matches_list:
+        match_id = match.get('id')
+        match_number = match.get('match_number')
+        handle1 = match.get('p1')
+        handle2 = match.get('p2')
+        problem_id = match.get('title')
+
+        new_match=Matches(match_id, handle1, handle2, problem_id)
+        tracking_matches[match_number] = new_match
         
+        # Start tracking each match
+        start_tracking(match_id, match_number, handle1, handle2, problem_id)
+    print(tracking_matches)
+    return jsonify({"status": "tournament_started", "matches": matches_list}), 200
+
+# @app.route('/start_tracking', methods=['POST'])
+def start_tracking(match_id, match_number, handle1, handle2, problem_id):
+    try:
         if not handle1 or not handle2 or not problem_id or not match_id:
             return jsonify({"error": "Missing required parameters", "status": "error"}), 400
         
-        # Use the provided match ID as the tracking ID
-        tracking_id = match_id
-        
         # Check if this tracking ID is already in use
-        if tracking_id in active_tracking:
+        if match_number in tracking_matches:
             return jsonify({
                 "error": "Match ID already in use", 
                 "status": "error",
@@ -218,9 +255,9 @@ def start_tracking():
         # Start tracking in a separate thread
         def tracking_thread():
             try:
-                check_problem_solution(handle1, handle2, problem_id, tracking_id)
+                check_problem_solution(handle1, handle2, problem_id, match_id, match_number)
             except Exception as e:
-                active_tracking[tracking_id] = {
+                active_tracking[match_number] = {
                     "error": str(e),
                     "status": "error",
                     "message": f"An error occurred in tracking thread: {str(e)}",
@@ -231,7 +268,7 @@ def start_tracking():
         thread.daemon = True
         thread.start()
         
-        active_tracking[tracking_id] = {
+        active_tracking[match_number] = {
             "status": "tracking",
             "handle1": handle1,
             "handle2": handle2,
@@ -240,7 +277,7 @@ def start_tracking():
         }
         
         return jsonify({
-            "tracking_id": tracking_id,
+            "tracking_id": match_number,
             "match_id": match_id,
             "status": "started",
             "message": f"Now tracking {handle1} vs {handle2} for problem {problem_id}"
@@ -308,7 +345,7 @@ def stop_tracking():
                         "match_id": tracking_id
                     }
                 # Only stop tracking if there's no winner yet
-                elif tracking_id in tracking_threads:
+                elif tracking_id in tracking_matches:
                     # Check if winner exists in the status
                     if isinstance(status, dict) and "winner" in status:
                         # Winner already determined, don't stop

@@ -2517,7 +2517,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"agent-base@npm:^7.1.0, agent-base@npm:^7.1.2":
+"agent-base@npm:^7.1.0":
+  version: 7.1.4
+  resolution: "agent-base@npm:7.1.4"
+  checksum: 10/79bef167247789f955aaba113bae74bf64aa1e1acca4b1d6bb444bdf91d82c3e07e9451ef6a6e2e35e8f71a6f97ce33e3d855a5328eb9fad1bc3cc4cfd031ed8
+  languageName: node
+  linkType: hard
+
+"agent-base@npm:^7.1.2":
   version: 7.1.3
   resolution: "agent-base@npm:7.1.3"
   checksum: 10/3db6d8d4651f2aa1a9e4af35b96ab11a7607af57a24f3bc721a387eaa3b5f674e901f0a648b0caefd48f3fd117c7761b79a3b55854e2aebaa96c3f32cf76af84
@@ -4910,13 +4917,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ip-address@npm:^9.0.5":
-  version: 9.0.5
-  resolution: "ip-address@npm:9.0.5"
-  dependencies:
-    jsbn: "npm:1.1.0"
-    sprintf-js: "npm:^1.1.3"
-  checksum: 10/1ed81e06721af012306329b31f532b5e24e00cb537be18ddc905a84f19fe8f83a09a1699862bf3a1ec4b9dea93c55a3fa5faf8b5ea380431469df540f38b092c
+"ip-address@npm:^10.0.1":
+  version: 10.0.1
+  resolution: "ip-address@npm:10.0.1"
+  checksum: 10/09731acda32cd8e14c46830c137e7e5940f47b36d63ffb87c737331270287d631cf25aa95570907a67d3f919fdb25f4470c404eda21e62f22e0a55927f4dd0fb
   languageName: node
   linkType: hard
 
@@ -5303,13 +5307,6 @@ __metadata:
   bin:
     js-yaml: bin/js-yaml.js
   checksum: 10/c138a34a3fd0d08ebaf71273ad4465569a483b8a639e0b118ff65698d257c2791d3199e3f303631f2cb98213fa7b5f5d6a4621fd0fff819421b990d30d967140
-  languageName: node
-  linkType: hard
-
-"jsbn@npm:1.1.0":
-  version: 1.1.0
-  resolution: "jsbn@npm:1.1.0"
-  checksum: 10/bebe7ae829bbd586ce8cbe83501dd8cb8c282c8902a8aeeed0a073a89dc37e8103b1244f3c6acd60278bcbfe12d93a3f83c9ac396868a3b3bbc3c5e5e3b648ef
   languageName: node
   linkType: hard
 
@@ -5854,8 +5851,8 @@ __metadata:
   linkType: hard
 
 "node-gyp@npm:latest":
-  version: 11.2.0
-  resolution: "node-gyp@npm:11.2.0"
+  version: 11.3.0
+  resolution: "node-gyp@npm:11.3.0"
   dependencies:
     env-paths: "npm:^2.2.0"
     exponential-backoff: "npm:^3.1.1"
@@ -5869,7 +5866,7 @@ __metadata:
     which: "npm:^5.0.0"
   bin:
     node-gyp: bin/node-gyp.js
-  checksum: 10/806fd8e3adc9157e17bf0d4a2c899cf6b98a0bbe9f453f630094ce791866271f6cddcaf2133e6513715d934fcba2014d287c7053d5d7934937b3a34d5a3d84ad
+  checksum: 10/e7fb17ba72172d743ee791ea470cba1a579d1c37bcaa67a45d221d07df055baf1367d0684b3c7ee2b9b61f260cea77b2016aaac47027dbc0f43030c90b21527d
   languageName: node
   linkType: hard
 
@@ -7208,12 +7205,12 @@ __metadata:
   linkType: hard
 
 "socks@npm:^2.8.3":
-  version: 2.8.5
-  resolution: "socks@npm:2.8.5"
+  version: 2.8.7
+  resolution: "socks@npm:2.8.7"
   dependencies:
-    ip-address: "npm:^9.0.5"
+    ip-address: "npm:^10.0.1"
     smart-buffer: "npm:^4.2.0"
-  checksum: 10/0109090ec2bcb8d12d3875a987e85539ed08697500ad971a603c3057e4c266b4bf6a603e07af6d19218c422dd9b72d923aaa6c1f20abae275510bba458e4ccc9
+  checksum: 10/d19366c95908c19db154f329bbe94c2317d315dc933a7c2b5101e73f32a555c84fb199b62174e1490082a593a4933d8d5a9b297bde7d1419c14a11a965f51356
   languageName: node
   linkType: hard
 
@@ -7264,13 +7261,6 @@ __metadata:
   version: 1.4.8
   resolution: "sourcemap-codec@npm:1.4.8"
   checksum: 10/6fc57a151e982b5c9468362690c6d062f3a0d4d8520beb68a82f319c79e7a4d7027eeb1e396de0ecc2cd19491e1d602b2d06fd444feac9b63dd43fea4c55a857
-  languageName: node
-  linkType: hard
-
-"sprintf-js@npm:^1.1.3":
-  version: 1.1.3
-  resolution: "sprintf-js@npm:1.1.3"
-  checksum: 10/e7587128c423f7e43cc625fe2f87e6affdf5ca51c1cc468e910d8aaca46bb44a7fbcfa552f787b1d3987f7043aeb4527d1b99559e6621e01b42b3f45e5a24cbb
   languageName: node
   linkType: hard
 

@@ -1,12 +1,15 @@
-import React from 'react';
+import {useContext, React} from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Tree from './components/Tree';
 import Layout from './components/Layout';
 import GetProblemLink from './components/MatchDetails';
+import { SocketProvider} from './config/Socket';
+import Leaderboard from './components/Leaderboard';
 import './App.css';
 
 function App() {
     return (
+        <SocketProvider>
         <Router>
             <div className="min-h-screen bg-[#0A0A0A] text-[#E5E7EB] relative overflow-hidden">
                 {/* Background patterns */}
@@ -16,9 +19,9 @@ function App() {
                 <div className="relative z-10">
                     <Layout>
                         <Routes>
-                            <Route path="/" element={<GetProblemLink />} />
+                            <Route path="/problem_link" element={<GetProblemLink />} />
                             <Route
-                                path="/match-details"
+                                path="/"
                                 element={
                                     <div className="-mt-6">
                                         <div className="bg-transparent rounded-lg shadow-sm">
@@ -27,6 +30,7 @@ function App() {
                                     </div>
                                 }
                             />
+                            <Route path="/leaderboard" element={<Leaderboard />} />
                         </Routes>
                     </Layout>
                 </div>
@@ -35,6 +39,7 @@ function App() {
                 <div className="fixed bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#0A0A0A] to-transparent pointer-events-none"></div>
             </div>
         </Router>
+        </SocketProvider>
     );
 }
 

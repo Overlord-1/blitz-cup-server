@@ -12,7 +12,7 @@ const supabase = createClient(
 // Add a Set to keep track of processed match IDs
 const processedMatches = new Set();
 
-async function getRandomQuestion(level) {
+export async function getRandomQuestion(level) {
     try {
         // Get a random unused question matching the level/band
         const { data: questionData, error: questionError } = await supabase

@@ -1,5 +1,13 @@
-import { Kafka } from 'kafkajs';
+// import { Kafka } from 'kafkajs';
 import { supabase } from "../config/connectDB.js";
+import {getSocketIO} from '../config/connectSocket.js';
+import {getRandomQuestion} from '../controllers/pollingService.js';
+import amqp from 'amqplib';
+import axios from 'axios';
+
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // // Initialize Kafka with retry configuration
 // const kafka = new Kafka({
@@ -47,16 +55,39 @@ import { supabase } from "../config/connectDB.js";
 // // Start the Kafka consumer when the server starts
 // startKafkaConsumer().catch(console.error);
 
-async function updateMatchWinner(matchId, winnerHandle) {
+export async function startSubscriber() {
+  const connect= await amqp.connect(process.env.CLOUDAMQP_URL+`?heartbeat=60`);
+  const channel= await connect.createChannel();
+
+  const QUEUE_NAME='winners';
+
+  const q= await channel.assertQueue(QUEUE_NAME, { exclusive: false });
+
+  console.log('Waiting for messages');
+
+  channel.consume(q.queue, msg=>{
+    if (msg.content) {
+      updateMatchWinner(JSON.parse(msg.content.toString()));
+      console.log('Received message from Queue');
+    }
+  }, {noAck: true});
+}
+
+async function updateMatchWinner(newData) {
+
+  console.log('updating winner', newData);
+
   try {
+    const { match_id, winner } = newData;
+    console.log(newData)
     const { data: userData } = await supabase
       .from('users')
       .select('id')
-      .eq('cf_handle', winnerHandle)
+      .eq('cf_handle', winner)
       .single();
 
     if (!userData) {
-      console.error(`User ${winnerHandle} not found`);
+      console.error(`User ${winner} not found`);
       return;
     }
 
@@ -64,14 +95,14 @@ async function updateMatchWinner(matchId, winnerHandle) {
     const { data: matchData } = await supabase
       .from('matches')
       .select('match_number, level')
-      .eq('id', matchId)
+      .eq('id', match_id)
       .single();
 
     // Update the current match with the winner
     await supabase
       .from('matches')
       .update({ winner: userData.id })
-      .eq('id', matchId);
+      .eq('id', match_id);
 
     // Calculate next match number
     const nextMatchNumber = Math.floor(matchData.match_number / 2);
@@ -98,11 +129,21 @@ async function updateMatchWinner(matchId, winnerHandle) {
       })
       .eq('match_number', nextMatchNumber);
 
+      const io = getSocketIO();
+      if (io) {
+              console.log(match_id, userData.id);
+              const new_winner=userData.id;
+              io.emit('new_winner', { match_id, new_winner });
+      } else {
+            console.error('Socket.IO is not initialized');
+      }
+
+    console.log('Update sent through socket');
+
   } catch (error) {
     console.error('Error in updateMatchWinner:', error);
   }
 }
-
 
 export const getTournamentStatus = async (req, res) => {
   try {
@@ -120,7 +161,7 @@ export const getTournamentStatus = async (req, res) => {
   }
 };
 
-const updateMatchIds = async () => {
+const  updateMatchIds = async () => {
   try {
     const { data: matches, error } = await supabase
       .from('matches')
@@ -293,6 +334,20 @@ export const startgame = async (req, res) => {
     if (usedError) throw usedError;
 
     res.status(200).send({ message: "Successfully initialized tournament" });
+
+    const {data : match_data}= await supabase
+    .from('matches')
+    .select('*')
+    .neq('level', 1)
+    .order('match_number', { ascending: true });
+
+    const start_status = await axios.post(`${process.env.WORKER_URL}/begin_tournament`, { matches: match_data })
+      .then(response => {
+        console.log("Tournament started:", response.data);
+      })
+      .catch(error => {
+        console.error("Error starting tournament:", error);
+      });
 
   } catch (error) {
     console.error("Error:", error);

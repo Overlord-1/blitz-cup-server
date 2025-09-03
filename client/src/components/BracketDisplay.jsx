@@ -14,7 +14,7 @@ const BracketDisplay = ({ matches, participants }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="w-full pb-8 overflow-x-auto overflow-y-hidden xl:overflow-hidden"
+            className="w-full pb-8 overflow-x-auto overflow-y-auto xl:overflow-hidden"
         >
             <motion.div 
                 initial={{ scale: 0.95 }}

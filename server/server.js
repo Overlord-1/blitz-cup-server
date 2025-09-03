@@ -7,10 +7,17 @@ import questionRoutes from './routes/questionRoutes.js';
 import roundRouter from './routes/roundRoutes.js';
 // import { startPolling } from './controllers/pollingService.js';
 
+import { startSubscriber } from './controllers/gameController.js'
+import { createServer } from 'http';
+import { initializeSocket } from './config/connectSocket.js';
+
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+const server = createServer(app);
+const io = initializeSocket(server);
 
 app.use(express.json());
 app.use(morgan('dev'));
@@ -31,7 +38,8 @@ app.get('/', (req, res) => {
     res.send('<h1>Hello World!</h1>');
 });
 
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`Server running on port ${port}`);
     // startPolling();
+    startSubscriber();
 });

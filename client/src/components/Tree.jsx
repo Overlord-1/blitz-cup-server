@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import axios from 'axios';
 import BlitzAnimation from './BlitzAnimation';
 import BracketDisplay from './BracketDisplay';
 import { backendURL } from '../config/backendURL';
-import { motion, AnimatePresence } from 'framer-motion';
-import confetti from 'canvas-confetti';
+// import { motion, AnimatePresence } from 'framer-motion';
+// import confetti from 'canvas-confetti';
+import { SocketContext } from '../config/Socket';
+import { use } from 'react';
+import { WindIcon } from 'lucide-react';
 
 const Tree = () => {
     const [participants, setParticipants] = useState([]);
@@ -13,21 +16,23 @@ const Tree = () => {
     const [error, setError] = useState(null);
     const [isAnimating, setIsAnimating] = useState(false);
     const [tournamentStatus, setTournamentStatus] = useState(true);
-    const [winners, setWinners] = useState(new Set());
-    const [showWinnerAnimation, setShowWinnerAnimation] = useState(false);
-    const [currentWinner, setCurrentWinner] = useState(null);
+    const [scale, setScale] = useState(0.5);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+
+    const {socket, socketConnected}=useContext(SocketContext)
 
     // Add fetchMatches function to get updated match data
-    const fetchMatches = useCallback(async () => {
-        try {
-            const matchesResponse = await axios.get(`${backendURL}/game/get-matches`);
-            const newMatches = matchesResponse.data;
-            setMatches(newMatches);
-            console.log(matches)
-        } catch (err) {
-            console.error('Error fetching matches:', err);
-        }
-    }, []);
+    // const fetchMatches = useCallback(async () => {
+    //     try {
+    //         const matchesResponse = await axios.get(`${backendURL}/game/get-matches`);
+    //         const newMatches = matchesResponse.data;
+    //         setMatches(newMatches);
+    //     } catch (err) {
+    //         console.error('Error fetching matches:', err);
+    //     }
+    // }, []);
 
     // Modified fetchTournamentData to include matches
     const fetchTournamentData = async () => {
@@ -49,12 +54,16 @@ const Tree = () => {
                     if (player1 && player2) orderedParticipants.push(player1,player2);
                 }
             });
-            console.log(orderedParticipants)
+
+            const matchesResponse2 = await axios.get(`${backendURL}/game/get-matches`);
+            const matchesData2 = matchesResponse2.data;
+            setMatches(matchesData2);
+
             if (orderedParticipants.length !== 32) {
                 throw new Error('Need exactly 32 participants to start the tournament');
             }
             setParticipants(orderedParticipants);
-            console.log(orderedParticipants)
+            // console.log(orderedParticipants)
             // console.log(participants)
         } catch (err) {
             setError(err.message || 'Failed to fetch tournament data');
@@ -62,64 +71,83 @@ const Tree = () => {
         }
     };
 
-    useEffect(() => {
-        const checkForNewWinners = () => {
-            matches.forEach(match => {
-                // Skip if no winner or already processed
-                if (!match.winner || winners.has(match.winner)) {
-                    return;
-                }
+    // useEffect(() => {
+    //     const checkForNewWinners = () => {
+    //         matches.forEach(match => {
+    //             // Skip if no winner or already processed
+    //             if (!match.winner || winners.has(match.winner)) {
+    //                 return;
+    //             }
     
-                const winningPlayer = participants.find(p => p.id === match.winner);
-                if (winningPlayer) {
-                    // Update winners set
-                    setWinners(prevWinners => new Set([...prevWinners, match.winner]));
-                    setCurrentWinner(winningPlayer);
+    //             const winningPlayer = participants.find(p => p.id === match.winner);
+    //             if (winningPlayer) {
+    //                 // Update winners set
+    //                 setWinners(prevWinners => new Set([...prevWinners, match.winner]));
+    //                 setCurrentWinner(winningPlayer);
                     
-                    // Trigger confetti
-                    const triggerConfetti = () => {
-                        const defaults = { 
-                            startVelocity: 30, 
-                            spread: 360, 
-                            ticks: 60, 
-                            zIndex: 100,
-                            particleCount: 100,
-                            origin: { y: 0.6 }
-                        };
+    //                 // Trigger confetti
+    //                 const triggerConfetti = () => {
+    //                     const defaults = { 
+    //                         startVelocity: 30, 
+    //                         spread: 360, 
+    //                         ticks: 60, 
+    //                         zIndex: 100,
+    //                         particleCount: 100,
+    //                         origin: { y: 0.6 }
+    //                     };
     
-                        confetti({
-                            ...defaults,
-                            angle: 60,
-                            origin: { x: 0, y: 0.8 }
-                        });
+    //                     confetti({
+    //                         ...defaults,
+    //                         angle: 60,
+    //                         origin: { x: 0, y: 0.8 }
+    //                     });
     
-                        confetti({
-                            ...defaults,
-                            angle: 120,
-                            origin: { x: 1, y: 0.8 }
-                        });
-                    };
+    //                     confetti({
+    //                         ...defaults,
+    //                         angle: 120,
+    //                         origin: { x: 1, y: 0.8 }
+    //                     });
+    //                 };
     
-                    // Trigger multiple bursts
-                    triggerConfetti();
-                    setTimeout(triggerConfetti, 250);
-                    setTimeout(triggerConfetti, 500);
+    //                 // Trigger multiple bursts
+    //                 triggerConfetti();
+    //                 setTimeout(triggerConfetti, 250);
+    //                 setTimeout(triggerConfetti, 500);
     
-                    // Show winner animation
-                    setShowWinnerAnimation(true);
+    //                 // Show winner animation
+    //                 setShowWinnerAnimation(true);
     
-                    // Reset animation after delay
-                    setTimeout(() => {
-                        setShowWinnerAnimation(false);
-                    }, 3000);
-                }
-            });
-        };
+    //                 // Reset animation after delay
+    //                 setTimeout(() => {
+    //                     setShowWinnerAnimation(false);
+    //                 }, 3000);
+    //             }
+    //         });
+    //     };
     
-        if (matches.length > 0 && participants.length > 0) {
-            checkForNewWinners();
+    //     if (matches.length > 0 && participants.length > 0) {
+    //         checkForNewWinners();
+    //     }
+    // }, [matches, participants]); // Remove winners from dependencies to prevent loops
+
+    useEffect(()=>{
+        socket.on('new_winner', (data)=>{
+            setMatches(prevMatches=>{
+                return prevMatches.map(match=>{
+                    if (match.id === data.match_id){
+                        const winningPlayer = participants.find(p => p.id === data.new_winner);
+                        match.winner =  winningPlayer ? winningPlayer.id : null;
+                        return match;
+                    }
+                    return match;
+                })
+            })
+        });
+
+        return ()=>{
+            socket.off('new_winner');
         }
-    }, [matches, participants]); // Remove winners from dependencies to prevent loops
+    }, [matches, participants])
 
     useEffect(() => {
         const checkTournamentStatus = async () => {
@@ -147,18 +175,18 @@ const Tree = () => {
     }, []);
 
     // Add polling effect
-    useEffect(() => {
-        let pollInterval;
-        if (tournamentStatus && participants) {
-            pollInterval = setInterval(fetchMatches, 5000); // Poll every minute
-        }
+    // useEffect(() => {
+    //     let pollInterval;
+    //     if (tournamentStatus && participants) {
+    //         pollInterval = setInterval(fetchMatches, 5000); // Poll every minute
+    //     }
 
-        return () => {
-            if (pollInterval) {
-                clearInterval(pollInterval);
-            }
-        };
-    }, [tournamentStatus, participants, fetchMatches]);
+    //     return () => {
+    //         if (pollInterval) {
+    //             clearInterval(pollInterval);
+    //         }
+    //     };
+    // }, [tournamentStatus, participants, fetchMatches]);
 
     const initializeTournament = async () => {
         setLoading(true);
@@ -180,20 +208,64 @@ const Tree = () => {
         }
     };
 
-    // const resetTournament = async () => {
-    //     try {
-    //         setLoading(true);
-    //         setParticipants(null);
-    //         setMatches([]);
-    //         await axios.get(`${backendURL}/game/reset`);
-    //         setTournamentStatus(false);
-    //     } catch (err) {
-    //         setError(err.message || 'Failed to reset tournament');
-    //         console.error('Tournament reset error:', err);
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
+    const resetTournament = async () => {
+        try {
+            setLoading(true);
+            setParticipants(null);
+            setMatches([]);
+            await axios.get(`${backendURL}/game/reset`);
+            setTournamentStatus(false);
+        } catch (err) {
+            setError(err.message || 'Failed to reset tournament');
+            console.error('Tournament reset error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleWheel = (e) => {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            const newScale = Math.min(Math.max(0.5, scale - (e.deltaY * 0.001)), 2);
+            setScale(newScale);
+        }
+    };
+
+    const handleMouseDown = (e) => {
+        setIsDragging(true);
+        setStartPos({ x: e.clientX - position.x, y: e.clientY - position.y });
+    };
+
+    const handleMouseMove = (e) => {
+        if (isDragging) {
+            setPosition({
+                x: e.clientX - startPos.x,
+                y: e.clientY - startPos.y
+            });
+        }
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    const resetView = () => {
+        setScale(0.5);
+        setPosition({ x: 0, y: 0 });
+    };
+
+    // Add zoom controls effect
+    useEffect(() => {
+        const container = document.getElementById('bracket-container');
+        if (container) {
+            container.addEventListener('wheel', handleWheel, { passive: false });
+        }
+        return () => {
+            if (container) {
+                container.removeEventListener('wheel', handleWheel);
+            }
+        };
+    }, [scale]);
 
     if (error) {
         return (
@@ -224,8 +296,8 @@ const Tree = () => {
                     <div className="absolute inset-0 w-10 h-10 border-2 border-[#3ECF8E]/10 rounded-full"></div>
                 </div>
                 <div className="mt-6 space-y-1 text-center">
-                    <p className="text-sm xl:text-8xl font-medium text-[#E5E7EB]">Loading Tournament</p>
-                    <p className="text-xs xl:text-6xl text-[#6B7280]">Fetching match data...</p>
+                    <p className="text-5xl 3xl:text-8xl font-medium text-[#E5E7EB] mb-4">Loading Tournament</p>
+                    <p className="text-2xl 3xl:text-6xl text-[#6B7280]">Fetching match data...</p>
                 </div>
             </div>
         );
@@ -233,16 +305,16 @@ const Tree = () => {
 
     if (!tournamentStatus || !participants) {
         return (
-            <div className="flex flex-col items-center text-center justify-center min-h-[800px] w-full mx-auto px-4 animate-fadeIn">
-                <div className="w-full rounded-xl border border-[#3ECF8E]/10 bg-[#3ECF8E]/[0.02] p-8 backdrop-blur-sm">
-                    <h2 className="text-xl xl:text-8xl font-semibold text-[#3ECF8E] mb-4">Initialize Tournament</h2>
-                    <p className="text-sm xl:text-6xl text-[#6B7280] mb-6">Start the tournament to generate brackets and begin matches.</p>
+            <div className="flex flex-col items-center text-center justify-center min-h-[400px] w-full mx-auto px-4 animate-fadeIn">
+                <div className="w-3/5 rounded-xl border border-[#3ECF8E]/10 bg-[#3ECF8E]/[0.02] p-8 backdrop-blur-sm">
+                    <h2 className="text-5xl 3xl:text-8xl font-semibold text-[#3ECF8E] mb-2">Initialize Tournament</h2>
+                    <p className="text-xl 3xl:text-6xl text-[#6B7280] mb-2">Start the tournament to generate brackets and begin matches.</p>
                     <button
                         onClick={initializeTournament}
                         disabled={loading || isAnimating}
                         className={`
-                            w-1/5 px-4 py-2.5 rounded-lg text-sm xl:text-6xl font-medium
-                            transition-all duration-200 cursor-pointer mt-24
+                            w-2/5 px-4 py-2.5 rounded-lg text-xl 3xl:text-6xl font-medium
+                            transition-all duration-200 cursor-pointer mt-4
                             ${loading || isAnimating
                                 ? 'bg-[#1C1C1C] text-[#6B7280] cursor-not-allowed'
                                 : 'bg-[#3ECF8E] text-[#0A0A0A] hover:bg-[#3AC489] hover:shadow-lg hover:shadow-[#3ECF8E]/10'
@@ -257,36 +329,61 @@ const Tree = () => {
     }
 
     return (
-        <div className='flex justify-center align-middle overflow-auto mt-28'>
-        <div className="relative animate-fadeIn">
-            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#0A0A0A] to-transparent pointer-events-none z-10"></div>
-            <div className="relative overflow-x-auto overflow-y-hidden">
-                <BracketDisplay matches={matches} participants={participants} />
-            </div>
-            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A0A0A] to-transparent pointer-events-none z-10"></div>
-        </div>
-        {showWinnerAnimation && currentWinner && (
-            <AnimatePresence>
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+        <div className='relative w-full h-[calc(100vh-7rem)] overflow-hidden'>
+            <button onClick={resetTournament} className='cursor-pointer'> Reset Tournament</button>
+            {/* Zoom Controls */}
+            <div className="absolute top-4 right-4 z-20 flex gap-2">
+                <button
+                    onClick={() => setScale(prev => Math.min(prev + 0.3, 2))}
+                    className="p-2 bg-[#3ECF8E]/10 rounded-lg hover:bg-[#3ECF8E]/20"
                 >
-                    <motion.div 
-                        className="bg-[#3ECF8E]/10 backdrop-blur-sm rounded-xl p-8 border border-[#3ECF8E]/20"
-                        initial={{ y: 50 }}
-                        animate={{ y: 0 }}
-                        transition={{ type: "spring", bounce: 0.4 }}
-                    >
-                        <h2 className="text-2xl font-bold text-[#3ECF8E] text-center">
-                            {currentWinner.name} Wins!
-                        </h2>
-                    </motion.div>
-                </motion.div>
-            </AnimatePresence>
-        )}
-    </div>);
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#3ECF8E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                </button>
+                <button
+                    onClick={() => setScale(prev => Math.max(prev - 0.3, 0.3))}
+                    className="p-2 bg-[#3ECF8E]/10 rounded-lg hover:bg-[#3ECF8E]/20"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#3ECF8E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                    </svg>
+                </button>
+                <button
+                    onClick={resetView}
+                    className="p-2 bg-[#3ECF8E]/10 rounded-lg hover:bg-[#3ECF8E]/20"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#3ECF8E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div
+                id="bracket-container"
+                className="w-full h-full flex justify-center items-center cursor-grab active:cursor-grabbing"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+            >
+                <div 
+                    style={{
+                        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                        transformOrigin: 'center',
+                        transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                    }}
+                    className="relative animate-fadeIn"
+                >
+                    <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#0A0A0A] to-transparent pointer-events-none z-10"></div>
+                    <div className="relative">
+                        <BracketDisplay matches={matches} participants={participants} />
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A0A0A] to-transparent pointer-events-none z-10"></div>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default Tree;
