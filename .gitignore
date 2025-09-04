@@ -2,3 +2,4 @@ myenv/
 scripts/codeforces_tournament_problems.csv
 scripts/problem_set_analysis.png
 scripts/problem_set_report.txt
+.vscode
