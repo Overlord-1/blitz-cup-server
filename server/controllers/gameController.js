@@ -459,16 +459,53 @@ export const startgame = async (req, res) => {
     const { data: match_data } = await supabase
       .from('matches')
       .select('*')
-      .neq('level', 1)
+      .eq('level', 1)
       .order('match_number', { ascending: true });
 
-    const start_status = await axios.post(`${process.env.WORKER_URL}/begin_tournament`, { matches: match_data })
-      .then(response => {
-        console.log("Tournament started:", response.data);
-      })
-      .catch(error => {
-        console.error("Error starting tournament:", error);
-      });
+    console.log(match_data);
+    match_data.forEach(async match=>{
+
+      const { data: user1 } = await supabase
+        .from('users')
+        .select('cf_handle')
+        .eq('id', match.p1)
+        .single();
+
+
+      // name of user2 
+      const { data: user2 } = await supabase
+        .from('users')
+        .select('cf_handle')
+        .eq('id', match.p2)
+        .single();
+
+       // link of question
+      const { data: latest_question } = await supabase
+        .from('problemset')
+        .select('link')
+        .eq('id', match.cf_question)
+        .single();
+
+        const finalNewMatchData = {
+        p1: user1.cf_handle,
+        p2: user2.cf_handle,
+        match_id: match.id,
+        match_number: match.match_number,
+        level: match.level,
+        cf_question: latest_question.link
+      }
+      console.log('Publishing to match queue:', finalNewMatchData);
+      publish_to_match_queue(finalNewMatchData);
+
+    });
+
+    // const start_status = await axios.post(`${process.env.WORKER_URL}/begin_tournament`, { matches: match_data })
+    //   .then(response => {
+    //     console.log("Tournament started:", response.data);
+    //   })
+    //   .catch(error => {
+    //     console.error("Error starting tournament:", error);
+    //   });
 
   } catch (error) {
     console.error("Error:", error);
