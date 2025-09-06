@@ -41,7 +41,7 @@ const VerticalBracket = ({ matches, participants }) => {
             variants={container}
             initial="hidden"
             animate="show"
-            className="flex flex-col gap-8 p-4 md:p-8 w-full max-w-6xl mx-auto"
+            className="flex flex-col gap-8 p-4 md:p-8 w-full max-w-6xl mx-auto mt-14"
         >
             {rounds.map(({ name, number }) => (
                 <motion.div 
@@ -49,7 +49,11 @@ const VerticalBracket = ({ matches, participants }) => {
                     variants={item}
                     className="w-full"
                 >
-                    <h3 className="text-2xl md:text-3xl font-medium text-[#3ECF8E] mb-4">{name}</h3>
+                    <div className='flex justify-center items-center'>
+                        <span className="h-1 w-100 bg-gradient-to-r from-transparent via-[#3ECF8E] to-transparent mb-4"></span>
+                        <h3 className="text-2xl md:text-3xl font-medium text-[#3ECF8E] mb-4 text-center">{name}</h3>
+                        <span className="h-1 w-100 bg-gradient-to-r from-transparent via-[#3ECF8E] to-transparent mb-4"></span>
+                    </div>
                     <div className="grid gap-4">
                         {getRoundMatches(number).map((match) => {
                             const player1Name = getPlayerName(match.p1);
@@ -115,6 +119,7 @@ const VerticalBracket = ({ matches, participants }) => {
                     </div>
                 </motion.div>
             ))}
+            
         </motion.div>
     );
 };
