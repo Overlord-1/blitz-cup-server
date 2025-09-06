@@ -103,10 +103,8 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
     Returns:
         dict: Result containing winner and timing information
     """
-    print('check_problem_solution called')
     try:
         contest_id, problem_index = problem_id.split("/")[::-1][:2][::-1]
-        print(f"Contest ID: {contest_id}, Problem Index: {problem_index}")
 
         # Store the initial status
         handle1_solved = False
@@ -168,6 +166,7 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                         "status": "both_solved",
                         "match_id": tracking_id
                     }
+                    publish_to_winner_queue({"match_id": tracking_id, "winner": handle1})
                 else:
                     result = {
                         "winner": handle2,
@@ -178,6 +177,7 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                         "status": "both_solved",
                         "match_id": tracking_id
                     }
+                    publish_to_winner_queue({"match_id": tracking_id, "winner": handle2})
                 active_tracking[tracking_id] = result
                 # Clean up
                 if tracking_id in tracking_threads:
@@ -193,6 +193,7 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                     "message": f"{handle2} has not solved the problem yet",
                     "match_id": tracking_id
                 }
+                publish_to_winner_queue({"match_id": tracking_id, "winner": handle1})
                 active_tracking[tracking_id] = result
                 # Clean up
                 if tracking_id in tracking_threads:
@@ -208,6 +209,7 @@ def check_problem_solution(handle1, handle2, problem_id, tracking_id):
                     "message": f"{handle1} has not solved the problem yet",
                     "match_id": tracking_id
                 }
+                publish_to_winner_queue({"match_id": tracking_id, "winner": handle2})
                 active_tracking[tracking_id] = result
                 # Clean up
                 if tracking_id in tracking_threads:
