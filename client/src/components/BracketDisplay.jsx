@@ -14,7 +14,7 @@ const BracketDisplay = ({ matches, participants }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="w-full pb-8 overflow-x-auto overflow-y-auto xl:overflow-hidden"
+            className="w-full pb-8"
         >
             <motion.div 
                 initial={{ scale: 0.95 }}
@@ -23,8 +23,8 @@ const BracketDisplay = ({ matches, participants }) => {
                 className="relative w-full" 
                 // style={{ width: bracketWidth, height: bracketHeight }}
             >
-        <div className="w-full pb-8 overflow-x-auto xl:overflow-hidden">
-            <div className="relative w-full">
+        <div className="w-full h-full flex items-center justify-center overflow-hidden">
+            <div className="relative max-w-full max-h-full">
                 <div className="flex flex-row gap-16 w-full h-full mt-20">
                     {/* Left Bracket */}
                     <div className="flex flex-col justify-around">

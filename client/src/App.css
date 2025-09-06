@@ -56,3 +56,18 @@
   filter: blur(5px);
   z-index: -1;
 }
+
+::-webkit-scrollbar {
+  width: 4px;
+  padding: 0;
+  margin:0;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #3ECF8E;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}

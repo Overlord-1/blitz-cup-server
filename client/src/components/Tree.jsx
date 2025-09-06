@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import axios from 'axios';
 import BlitzAnimation from './BlitzAnimation';
 import BracketDisplay from './BracketDisplay';
+import VerticalBracket from './VerticalBracket';
 import { backendURL } from '../config/backendURL';
 // import { motion, AnimatePresence } from 'framer-motion';
 // import confetti from 'canvas-confetti';
@@ -21,6 +22,7 @@ const Tree = () => {
     const [isDragging, setIsDragging] = useState(false);
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
     const [touchStart, setTouchStart] = useState(null);
+    const [view, setView] = useState('tree'); // 'tree' or 'vertical'
 
     const {socket, socketConnected}=useContext(SocketContext)
 
@@ -377,60 +379,76 @@ const Tree = () => {
                 Reset Tournament
             </button>
 
-            {/* Zoom Controls - now in bottom center for mobile */}
-            <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-2 bg-[#1C1C1C]/80 p-2 rounded-lg backdrop-blur-sm md:absolute md:bottom-auto md:left-auto md:transform-none md:top-4 md:right-4">
-                <button
-                    onClick={() => setScale(prev => Math.min(prev + 0.3, 2))}
-                    className="p-2 bg-[#3ECF8E]/10 rounded-lg hover:bg-[#3ECF8E]/20"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#3ECF8E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                </button>
-                <button
-                    onClick={() => setScale(prev => Math.max(prev - 0.3, 0.3))}
-                    className="p-2 bg-[#3ECF8E]/10 rounded-lg hover:bg-[#3ECF8E]/20"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#3ECF8E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                    </svg>
-                </button>
-                <button
-                    onClick={resetView}
-                    className="p-2 bg-[#3ECF8E]/10 rounded-lg hover:bg-[#3ECF8E]/20"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#3ECF8E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                </button>
-            </div>
-            
-            <div
-                id="bracket-container"
-                className="w-full h-full flex justify-center items-center cursor-grab active:cursor-grabbing touch-none"
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
+            {/* View Toggle Button */}
+            <button 
+                onClick={() => setView(view === 'tree' ? 'vertical' : 'tree')} 
+                className='absolute text-md top-8 right-6 max-w-32 md:max-w-72 md:top-5 md:right-64 md:text-2xl z-20 px-3 py-1.5 bg-[#3ECF8E]/10 text-[#3ECF8E] rounded-md hover:bg-[#3ECF8E]/20 transition-all duration-200 hover:scale-105 active:scale-95'
             >
-                <div 
-                    style={{
-                        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                        transformOrigin: 'center',
-                        transition: isDragging ? 'none' : 'transform 0.1s ease-out'
-                    }}
-                    className="relative animate-fadeIn"
-                >
-                    <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#0A0A0A] to-transparent pointer-events-none z-10"></div>
-                    <div className="relative">
-                        <BracketDisplay matches={matches} participants={participants} />
-                    </div>
-                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A0A0A] to-transparent pointer-events-none z-10"></div>
+                {view === 'tree' ? 'Switch to Vertical View' : 'Switch to Tree View'}
+            </button>
+
+            {/* Show zoom controls only in tree view */}
+            {view === 'tree' && (
+                <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-2 bg-[#1C1C1C]/80 p-2 rounded-lg backdrop-blur-sm md:absolute md:bottom-auto md:left-auto md:transform-none md:top-4 md:right-4">
+                    <button
+                        onClick={() => setScale(prev => Math.min(prev + 0.3, 2))}
+                        className="p-2 bg-[#3ECF8E]/10 rounded-lg hover:bg-[#3ECF8E]/20"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#3ECF8E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                    </button>
+                    <button
+                        onClick={() => setScale(prev => Math.max(prev - 0.3, 0.3))}
+                        className="p-2 bg-[#3ECF8E]/10 rounded-lg hover:bg-[#3ECF8E]/20"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#3ECF8E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                        </svg>
+                    </button>
+                    <button
+                        onClick={resetView}
+                        className="p-2 bg-[#3ECF8E]/10 rounded-lg hover:bg-[#3ECF8E]/20"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#3ECF8E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
                 </div>
-            </div>
+            )}
+            
+            {view === 'tree' ? (
+                <div
+                    id="bracket-container"
+                    className="w-full h-full flex justify-center items-center cursor-grab active:cursor-grabbing touch-none overflow-hidden"
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                >
+                    <div 
+                        style={{
+                            transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                            transformOrigin: 'center',
+                            transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                        }}
+                        className="relative animate-fadeIn"
+                    >
+                        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#0A0A0A] to-transparent pointer-events-none z-10"></div>
+                        <div className="relative">
+                            <BracketDisplay matches={matches} participants={participants} />
+                        </div>
+                        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A0A0A] to-transparent pointer-events-none z-10"></div>
+                    </div>
+                </div>
+            ) : (
+                <div className="w-full h-full overflow-y-auto">
+                    <VerticalBracket matches={matches} participants={participants} />
+                </div>
+            )}
         </div>
     );
 };
