@@ -7,6 +7,7 @@ import pika
 import json
 import os
 from dotenv import load_dotenv
+from functools import wraps
 
 load_dotenv()
 app = Flask(__name__)
@@ -21,6 +22,28 @@ tracking_threads={}
 # Dictionary to store active tracking status
 active_tracking = {}
 
+def retry_on_connection_error(max_retries=3, delay=5):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            retries = 0
+            while retries < max_retries:
+                try:
+                    return func(*args, **kwargs)
+                except (pika.exceptions.AMQPConnectionError, 
+                       pika.exceptions.ConnectionClosedByBroker,
+                       pika.exceptions.StreamLostError) as e:
+                    retries += 1
+                    if retries == max_retries:
+                        print(f"Failed to connect after {max_retries} attempts: {str(e)}")
+                        raise
+                    print(f"Connection attempt {retries} failed. Retrying in {delay} seconds...")
+                    time.sleep(delay)
+            return None
+        return wrapper
+    return decorator
+
+@retry_on_connection_error()
 def publish_to_winner_queue(winner_data):
     """Publish winner data to RabbitMQ"""
     try:
@@ -47,28 +70,27 @@ def publish_to_winner_queue(winner_data):
         connection.close()
     except Exception as e:
         print(f"Error publishing to RabbitMQ: {str(e)}")
+        raise
 
-
+@retry_on_connection_error()
 def subscribe_from_match_queue():
     try:
-        connection= pika.BlockingConnection(pika.URLParameters(CLOUDAMQP_URL))
-        channel=connection.channel()
+        connection = pika.BlockingConnection(pika.URLParameters(CLOUDAMQP_URL))
+        channel = connection.channel()
 
-        matches_queue='matches'
-
+        matches_queue = 'matches'
         channel.queue_declare(queue=matches_queue, durable=True)
-
         channel.basic_consume(
-            queue=matches_queue, on_message_callback=callback, auto_ack=True
+            queue=matches_queue, 
+            on_message_callback=callback, 
+            auto_ack=True
         )
 
         print('Waiting for messages in match queue. To exit press CTRL+C')
-
         channel.start_consuming()
-
     except Exception as e:
         print('Error', str(e))
-
+        raise
 
 def callback(ch, method, properties, body):
     # print("Received message:", body)
