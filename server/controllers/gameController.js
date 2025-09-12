@@ -4,7 +4,7 @@ import { getSocketIO } from '../config/connectSocket.js';
 import { getRandomQuestion } from '../controllers/pollingService.js';
 import amqp from 'amqplib';
 import axios from 'axios';
-import { verifySubmissions, changeQuestion } from "./verifyController.js";
+import { verifySubmissions, changeQuestion, verifyController } from "./verifyController.js";
 
 import dotenv from 'dotenv';
 
@@ -385,7 +385,7 @@ export const startgame = async (req, res) => {
       .limit(32);
 
     if (userError) throw userError;
-    if (!users?.length >= 32) {
+    if (!users?.length || users.length < 32) {
       return res.status(404).json({ error: "Not enough users found for this round" });
     }
 
@@ -394,7 +394,7 @@ export const startgame = async (req, res) => {
       .from("problemset")
       .select("*")
       .eq("used", false)
-      .eq("band", currentLevel)  // Match band with current level
+      .eq("band", currentLevel)
       .limit(16);
 
     if (questionError) throw questionError;
@@ -408,7 +408,7 @@ export const startgame = async (req, res) => {
     const { data: roundMatches, error: matchError } = await supabase
       .from("matches")
       .select("*")
-      .eq("level", currentLevel)  // Use current level instead of hardcoded 1
+      .eq("level", currentLevel)
       .order('match_number', { ascending: true });
 
     if (matchError) throw matchError;
@@ -454,9 +454,102 @@ export const startgame = async (req, res) => {
 
     if (usedError) throw usedError;
 
-    res.status(200).send({ message: "Successfully initialized tournament" });
+    // changes
+    for (const update of updates) {
+      const matchId = update.id;
+      const questionId = update.cf_question;
+      const p1Id = update.p1;
+      const p2Id = update.p2;
 
-    const { data: match_data } = await supabase
+      // Get user handles
+      const { data: p1Data } = await supabase
+        .from('users')
+        .select('cf_handle')
+        .eq('id', p1Id)
+        .single();
+      const { data: p2Data } = await supabase
+        .from('users')
+        .select('cf_handle')
+        .eq('id', p2Id)
+        .single();
+
+      const handle1 = p1Data?.cf_handle;
+      const handle2 = p2Data?.cf_handle;
+
+      if (!handle1 || !handle2) continue;
+
+      // Fetch submissions and check if solved
+      const [submissions1, submissions2] = await Promise.all([
+        verifyController(handle1),
+        verifyController(handle2)
+      ]);
+
+      const handle1Solved = submissions1.some(sub => 
+        sub.problem.contestId + sub.problem.index === questions.find(q => q.id === questionId)?.question_id && 
+        sub.verdict === 'OK'
+      );
+      const handle2Solved = submissions2.some(sub => 
+        sub.problem.contestId + sub.problem.index === questions.find(q => q.id === questionId)?.question_id && 
+        sub.verdict === 'OK'
+      );
+
+      if (handle1Solved || handle2Solved) {
+        console.log(`Match ${matchId}: Question already solved, changing...`);
+
+        // Change question with retries
+        let newQuestionId = await getRandomQuestion(currentLevel);
+        let attempts = 0;
+        const maxRetries = 10;
+
+        while (attempts < maxRetries) {
+          // Verify new question
+          const [newSub1, newSub2] = await Promise.all([
+            verifyController(handle1),
+            verifyController(handle2)
+          ]);
+          const newSolved1 = newSub1.some(sub => 
+            sub.problem.contestId + sub.problem.index === questions.find(q => q.id === newQuestionId)?.question_id && 
+            sub.verdict === 'OK'
+          );
+          const newSolved2 = newSub2.some(sub => 
+            sub.problem.contestId + sub.problem.index === questions.find(q => q.id === newQuestionId)?.question_id && 
+            sub.verdict === 'OK'
+          );
+
+          if (!newSolved1 && !newSolved2) break;
+
+          newQuestionId = await getRandomQuestion(currentLevel);
+          attempts++;
+        }
+
+        if (attempts >= maxRetries) {
+          console.error(`Match ${matchId}: No valid question found after retries`);
+          continue;
+        }
+
+        // Update match with new question
+        await supabase
+          .from('matches')
+          .update({ cf_question: newQuestionId })
+          .eq('id', matchId);
+
+        // Mark old question as unused
+        await supabase
+          .from('problemset')
+          .update({ used: false })
+          .eq('id', questionId);
+
+        // Mark new question as used
+        await supabase
+          .from('problemset')
+          .update({ used: true })
+          .eq('id', newQuestionId);
+
+        console.log(`Match ${matchId}: Question changed to ${newQuestionId}`);
+      }
+    }
+
+     const { data: match_data } = await supabase
       .from('matches')
       .select('*')
       .eq('level', 1)
@@ -499,14 +592,11 @@ export const startgame = async (req, res) => {
 
     });
 
-    // const start_status = await axios.post(`${process.env.WORKER_URL}/begin_tournament`, { matches: match_data })
-    //   .then(response => {
-    //     console.log("Tournament started:", response.data);
-    //   })
-    //   .catch(error => {
-    //     console.error("Error starting tournament:", error);
-    //   });
+    
 
+    res.status(200).send({ message: "Successfully initialized tournament" });
+
+    
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });

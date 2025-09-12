@@ -2,7 +2,7 @@ import axios from 'axios';
 import { supabase } from "../config/connectDB.js";
 
 
-async function verifyController(handle) {
+export async function verifyController(handle) {
     try {
         const response = await axios.get(`https://codeforces.com/api/user.status?handle=${handle}`);
         return response.data.status === 'OK' ? response.data.result : [];
