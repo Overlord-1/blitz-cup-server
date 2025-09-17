@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const VerticalBracket = ({ matches, participants }) => {
     const getRoundMatches = (roundNumber) => {
         return matches
-            .filter(match => Math.ceil(Math.log2(32/match.level)) === roundNumber)
+            .filter(match => 6-match.level === roundNumber)
             .sort((a, b) => a.match_number - b.match_number);
     };
 
@@ -56,6 +56,7 @@ const VerticalBracket = ({ matches, participants }) => {
                     </div>
                     <div className="grid gap-4">
                         {getRoundMatches(number).map((match) => {
+                            // console.log(match)
                             const player1Name = getPlayerName(match.p1);
                             const player2Name = getPlayerName(match.p2);
                             const isPlayer1Winner = match.winner === match.p1 && match.winner !== null;
@@ -72,40 +73,32 @@ const VerticalBracket = ({ matches, participants }) => {
                                         <span className="text-sm text-[#6B7280]">{name}</span>
                                     </div>
                                     <div className="flex flex-col gap-2">
-                                        <div className={`flex justify-between items-center p-3 rounded ${
-                                            isPlayer1Winner ? 'bg-[#3ECF8E]/10' : 'hover:bg-[#1C1C1C]'
-                                        }`}>
+                                        <div className={`flex justify-between items-center p-3 rounded ${isPlayer1Winner ? 'bg-[#3ECF8E]/[0.1]' : match.winner ? 'bg-[#FF0000]/[0.1]' : 'bg-[#6B7280]/[0.1] hover:bg-[#6B7280]/[0.2]'}`}>
                                             <div className="flex items-center gap-2">
                                                 <div className="relative">
-                                                    <div className={`h-2 w-2 rounded-full ${
-                                                        isPlayer1Winner ? 'bg-[#3ECF8E]' : 'bg-[#6B7280]'
-                                                    }`} />
+                                                    <div className={`h-2 w-2 rounded-full ${isPlayer1Winner ? 'bg-[#3ECF8E]/[0.1]' : match.winner ? 'bg-[#FF0000]/[0.1]' : 'bg-[#6B7280]/[0.1] hover:bg-[#6B7280]/[0.2]'}`} />
                                                     {isPlayer1Winner && (
                                                         <div className="absolute inset-0 animate-ping rounded-full bg-[#3ECF8E]/30" />
                                                     )}
                                                 </div>
                                                 <span className={`text-lg ${
-                                                    isPlayer1Winner ? 'text-[#3ECF8E]' : 'text-white'
+                                                    isPlayer1Winner ? 'text-[#3ECF8E]' : match.winner ? 'text-[#FF0000]/[0.8]' :'text-white'
                                                 }`}>{player1Name}</span>
                                             </div>
                                             {isPlayer1Winner && (
                                                 <span className="text-[#3ECF8E] text-sm">Winner</span>
                                             )}
                                         </div>
-                                        <div className={`flex justify-between items-center p-3 rounded ${
-                                            isPlayer2Winner ? 'bg-[#3ECF8E]/10' : 'hover:bg-[#1C1C1C]'
-                                        }`}>
+                                        <div className={`flex justify-between items-center p-3 rounded ${isPlayer2Winner ? 'bg-[#3ECF8E]/[0.1]' : match.winner ? 'bg-[#FF0000]/[0.1]' : 'bg-[#6B7280]/[0.1] hover:bg-[#6B7280]/[0.2]'}`}>
                                             <div className="flex items-center gap-2">
                                                 <div className="relative">
-                                                    <div className={`h-2 w-2 rounded-full ${
-                                                        isPlayer2Winner ? 'bg-[#3ECF8E]' : 'bg-[#6B7280]'
-                                                    }`} />
+                                                    <div className={`h-2 w-2 rounded-full ${isPlayer2Winner ? 'bg-[#3ECF8E]/[0.1]' : match.winner ? 'bg-[#FF0000]/[0.1]' : 'bg-[#6B7280]/[0.1] hover:bg-[#6B7280]/[0.2]'}`} />
                                                     {isPlayer2Winner && (
                                                         <div className="absolute inset-0 animate-ping rounded-full bg-[#3ECF8E]/30" />
                                                     )}
                                                 </div>
                                                 <span className={`text-lg ${
-                                                    isPlayer2Winner ? 'text-[#3ECF8E]' : 'text-white'
+                                                    isPlayer2Winner ? 'text-[#3ECF8E]' : match.winner ? 'text-[#FF0000]/[0.8]' :'text-white'
                                                 }`}>{player2Name}</span>
                                             </div>
                                             {isPlayer2Winner && (

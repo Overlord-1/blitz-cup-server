@@ -229,7 +229,7 @@ const Tree = () => {
     const handleWheel = (e) => {
         if (e.ctrlKey) {
             e.preventDefault();
-            const newScale = Math.min(Math.max(0.5, scale - (e.deltaY * 0.001)), 2);
+            const newScale = Math.min(Math.max(0.2, scale - (e.deltaY * 0.002)), 2);
             setScale(newScale);
         }
     };
@@ -381,7 +381,7 @@ const Tree = () => {
 
             {/* View Toggle Button */}
             <button 
-                onClick={() => setView(view === 'tree' ? 'vertical' : 'tree')} 
+                onClick={() => {setView(view === 'tree' ? 'vertical' : 'tree'); setPosition({x:0,y:0})}} 
                 className='absolute text-md top-8 right-6 max-w-32 md:max-w-72 md:top-5 md:right-64 md:text-2xl z-20 px-3 py-1.5 bg-[#3ECF8E]/10 text-[#3ECF8E] rounded-md hover:bg-[#3ECF8E]/20 transition-all duration-200 hover:scale-105 active:scale-95'
             >
                 {view === 'tree' ? 'Switch to Vertical View' : 'Switch to Tree View'}
@@ -399,7 +399,7 @@ const Tree = () => {
                         </svg>
                     </button>
                     <button
-                        onClick={() => setScale(prev => Math.max(prev - 0.3, 0.3))}
+                        onClick={() => setScale(prev => Math.max(prev - 0.2, 0.2))}
                         className="p-2 bg-[#3ECF8E]/10 rounded-lg hover:bg-[#3ECF8E]/20"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#3ECF8E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
